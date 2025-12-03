@@ -1,0 +1,238 @@
+name: 🛡️ Security Vulnerability Scanner
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '**.py'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  vulnerability-scan:
+    name: ML Security Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install scikit-learn==1.3.2 numpy pandas
+          pip install shap matplotlib seaborn
+      
+      - name: 🧠 Train ML Model (if not exists)
+        run: |
+          if [ ! -f "ml_model/vulnerability_model.pkl" ]; then
+            echo "🔄 Modelo no encontrado, entrenando nuevo modelo..."
+            python ml_model/model.py
+          else
+            echo "✅ Modelo existente encontrado"
+          fi
+      
+      - name: 🔍 Run Vulnerability Scan
+        id: scan
+        run: |
+          echo "🔍 Iniciando escaneo de vulnerabilidades..."
+          python scripts/vulnerability_scanner.py . --output reports/scan_results.json || echo "SCAN_FAILED=true" >> $GITHUB_OUTPUT
+        continue-on-error: true
+      
+      - name: 📊 Generate HTML Report
+        if: always()
+        run: |
+          python scripts/report_generator.py reports/scan_results.json --output reports/scan_report.html
+      
+      - name: 📤 Upload Reports as Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            reports/scan_results.json
+            reports/scan_report.html
+          retention-days: 30
+      
+      - name: 📝 Read Scan Results
+        if: always()
+        id: results
+        run: |
+          if [ -f "reports/scan_results.json" ]; then
+            TOTAL=$(jq -r '.total_files' reports/scan_results.json)
+            HIGH=$(jq -r '.high_risk_count' reports/scan_results.json)
+            MEDIUM=$(jq -r '.medium_risk_count' reports/scan_results.json)
+            LOW=$(jq -r '.low_risk_count' reports/scan_results.json)
+            PASSED=$(jq -r '.scan_passed' reports/scan_results.json)
+            
+            echo "TOTAL_FILES=$TOTAL" >> $GITHUB_OUTPUT
+            echo "HIGH_RISK=$HIGH" >> $GITHUB_OUTPUT
+            echo "MEDIUM_RISK=$MEDIUM" >> $GITHUB_OUTPUT
+            echo "LOW_RISK=$LOW" >> $GITHUB_OUTPUT
+            echo "SCAN_PASSED=$PASSED" >> $GITHUB_OUTPUT
+            
+            # Extraer archivos de alto riesgo
+            HIGH_RISK_FILES=$(jq -r '.high_risk_files[]' reports/scan_results.json | head -10)
+            echo "HIGH_RISK_FILES<<EOF" >> $GITHUB_OUTPUT
+            echo "$HIGH_RISK_FILES" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: 💬 Comment PR with Results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const scanData = JSON.parse(fs.readFileSync('reports/scan_results.json', 'utf8'));
+            
+            const passed = scanData.scan_passed;
+            const icon = passed ? '✅' : '❌';
+            const status = passed ? 'APROBADO' : 'RECHAZADO';
+            const color = passed ? '🟢' : '🔴';
+            
+            let highRiskFiles = '';
+            if (scanData.high_risk_files && scanData.high_risk_files.length > 0) {
+              highRiskFiles = '\n### 🚨 Archivos de Alto Riesgo\n\n';
+              scanData.high_risk_files.slice(0, 10).forEach(file => {
+                const detail = scanData.details.find(d => d.file === file);
+                if (detail) {
+                  highRiskFiles += `- \`${file}\` - Probabilidad: **${(detail.risk_probability * 100).toFixed(1)}%**\n`;
+                }
+              });
+            }
+            
+            const comment = `## ${icon} Reporte de Vulnerabilidades ML
+            
+            **Estado:** ${color} **${status}**
+            
+            ### 📊 Resumen
+            
+            | Métrica | Valor |
+            |---------|-------|
+            | Total de archivos | ${scanData.total_files} |
+            | 🔴 Riesgo Alto (>70%) | **${scanData.high_risk_count}** |
+            | 🟡 Riesgo Medio (40-70%) | ${scanData.medium_risk_count} |
+            | 🟢 Riesgo Bajo (<40%) | ${scanData.low_risk_count} |
+            
+            ${highRiskFiles}
+            
+            ### 📄 Reporte Detallado
+            
+            Descarga el reporte completo desde los artifacts de este workflow.
+            
+            ---
+            
+            *Generado por ML Security Scanner - Random Forest Classifier*
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+      
+      - name: 🚨 Create GitHub Issue for High Risk
+        if: steps.results.outputs.HIGH_RISK > 0 && github.event_name == 'push'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const scanData = JSON.parse(fs.readFileSync('reports/scan_results.json', 'utf8'));
+            
+            let filesList = '';
+            scanData.high_risk_files.forEach(file => {
+              const detail = scanData.details.find(d => d.file === file);
+              if (detail) {
+                filesList += `\n### 📄 \`${file}\`\n`;
+                filesList += `**Probabilidad:** ${(detail.risk_probability * 100).toFixed(1)}%\n`;
+                filesList += `**Nivel:** ${detail.risk_level}\n\n`;
+                
+                // Factores de riesgo
+                const features = detail.features;
+                const risks = [];
+                if (features.has_eval) risks.push('Uso de eval()');
+                if (features.has_exec) risks.push('Uso de exec()');
+                if (features.has_sql_concat) risks.push('SQL Injection');
+                if (features.has_command_injection_risk) risks.push('Inyección de comandos');
+                if (features.has_hardcoded_secrets) risks.push('Secretos hardcodeados');
+                
+                if (risks.length > 0) {
+                  filesList += '**Factores de riesgo:**\n';
+                  risks.forEach(risk => filesList += `- ${risk}\n`);
+                }
+              }
+            });
+            
+            const issueBody = `## 🚨 Vulnerabilidades Detectadas en Commit ${context.sha.substring(0, 7)}
+            
+            El escaneo de seguridad con Machine Learning ha detectado **${scanData.high_risk_count}** archivos con alto riesgo de vulnerabilidades.
+            
+            ### 📊 Resumen del Escaneo
+            
+            - **Commit:** ${context.sha}
+            - **Branch:** ${context.ref}
+            - **Total archivos analizados:** ${scanData.total_files}
+            - **Riesgo Alto:** ${scanData.high_risk_count}
+            - **Riesgo Medio:** ${scanData.medium_risk_count}
+            
+            ${filesList}
+            
+            ### 🔧 Acciones Recomendadas
+            
+            1. Revisar los archivos marcados con alto riesgo
+            2. Aplicar las correcciones de seguridad necesarias
+            3. Ejecutar nuevamente el escaneo
+            4. Consultar el reporte HTML completo en los artifacts
+            
+            ### 📄 Recursos
+            
+            - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+            - [CWE - Common Weakness Enumeration](https://cwe.mitre.org/)
+            
+            ---
+            
+            *Issue generado automáticamente por ML Security Scanner*
+            `;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Vulnerabilidades detectadas - ${scanData.high_risk_count} archivos de alto riesgo`,
+              body: issueBody,
+              labels: ['security', 'vulnerability', 'automated']
+            });
+      
+      - name: ❌ Fail if vulnerabilities found
+        if: steps.results.outputs.SCAN_PASSED == 'false'
+        run: |
+          echo "❌ Escaneo FALLÓ: Se detectaron ${{ steps.results.outputs.HIGH_RISK }} vulnerabilidades de alto riesgo"
+          echo ""
+          echo "Archivos afectados:"
+          echo "${{ steps.results.outputs.HIGH_RISK_FILES }}"
+          exit 1
+      
+      - name: ✅ Success
+        if: steps.results.outputs.SCAN_PASSED == 'true'
+        run: |
+          echo "✅ Escaneo EXITOSO: No se detectaron vulnerabilidades de alto riesgo"
+          echo "📊 Archivos analizados: ${{ steps.results.outputs.TOTAL_FILES }}"

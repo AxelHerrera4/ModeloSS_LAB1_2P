@@ -1,0 +1,81 @@
+# .gitignore para ML Security Scanner
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+ml_training_workspace/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Modelo entrenado (opcional: comentar si quieres subir el modelo)
+# ml_model/vulnerability_model.pkl
+
+# Reportes generados
+reports/*.json
+reports/*.html
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Secrets y configuración local
+.env
+.env.local
+secrets.yml
+config.local.yml
+
+# Sistema operativo
+Thumbs.db
+.DS_Store
+
+# Temporales
+*.tmp
+*.bak
+temp/
+tmp/
