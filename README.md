@@ -70,45 +70,45 @@ El sistema detecta los siguientes patrones de vulnerabilidades:
 ## Estructura del Proyecto
 
 ```
-train_detector.ipynb              Training notebook (5 cells)
+train_detector.ipynb              Notebook de entrenamiento (5 celdas)
 Dataset/
-  ├── data_Python.csv             Python vulnerabilities (2,316 samples)
-  └── data_JavaScript.csv         JavaScript vulnerabilities (~42K samples)
+  ├── data_Python.csv             Vulnerabilidades Python (2,316 muestras)
+  └── data_JavaScript.csv         Vulnerabilidades JavaScript (~42K muestras)
 ml_model/
-  ├── model.py                    Random Forest implementation
-  └── vulnerability_detector.pkl  Trained model
+  ├── model.py                    Implementación Random Forest
+  └── vulnerability_detector.pkl  Modelo entrenado
 scripts/
-  ├── code_analyzer.py            AST feature extraction (27 features)
-  ├── vulnerability_scanner.py    Main scanning engine
-  └── report_generator.py         HTML report generation
+  ├── code_analyzer.py            Extracción de características AST (27 características)
+  ├── vulnerability_scanner.py    Motor principal de escaneo
+  └── report_generator.py         Generación de reportes HTML
 tests/
-  ├── vulnerable_code_example.py  Python test cases
+  ├── vulnerable_code_example.py  Casos de prueba Python
   ├── secure_code_example.py
-  ├── vulnerable_code_js.js       JavaScript test cases
+  ├── vulnerable_code_js.js       Casos de prueba JavaScript
   └── secure_code_js.js
 ```
 
 ---
 
-## CI/CD Integration
+## Integración CI/CD
 
-GitHub Actions workflow included in `.github/workflows/security-scan.yml`
+Flujo de trabajo de GitHub Actions incluido en `.github/workflows/security-scan.yml`
 
-**Behavior**:
-- Automatically runs on each push/pull request
-- Scans all Python and JavaScript files
-- Fails pipeline if vulnerabilities with probability >= 70% are detected
+**Comportamiento**:
+- Se ejecuta automáticamente en cada push/pull request
+- Escanea todos los archivos Python y JavaScript
+- Falla el pipeline si detecta vulnerabilidades con probabilidad >= 70%
 
 ---
 
-## Usage Examples
+## Ejemplos de Uso
 
-### Scanning a Single File
+### Escanear un Archivo Individual
 ```bash
 python scripts/vulnerability_scanner.py tests/vulnerable_code_example.py
 ```
 
-**Output**:
+**Salida**:
 ```
 ALERTA: tests/vulnerable_code_example.py
    Probabilidad: 99.00%
@@ -120,12 +120,12 @@ ALERTA: tests/vulnerable_code_example.py
       - subprocess con shell=True
 ```
 
-### Scanning a Directory
+### Escanear un Directorio
 ```bash
 python scripts/vulnerability_scanner.py src/
 ```
 
-**Output**:
+**Salida**:
 ```
 Escaneando directorio: src/
 Archivos encontrados: 15
@@ -139,40 +139,40 @@ Archivos de alto riesgo (>70%): 3
 
 ---
 
-## Training Process
+## Proceso de Entrenamiento
 
-The training pipeline consists of 5 steps:
+El pipeline de entrenamiento consiste en 5 pasos:
 
-1. **Load Datasets**: Combines Python and JavaScript CVE/CWE data
-2. **Extract Features**: Analyzes both vulnerable code and patches (secure code)
-3. **Train Model**: Fits Random Forest with 84,588 samples
-4. **Validate**: Cross-validation with 5 folds
-5. **Save Model**: Persists trained model to `vulnerability_detector.pkl`
+1. **Cargar Datasets**: Combina datos CVE/CWE de Python y JavaScript
+2. **Extraer Características**: Analiza tanto código vulnerable como parches (código seguro)
+3. **Entrenar Modelo**: Ajusta Random Forest con 84,588 muestras
+4. **Validar**: Validación cruzada con 5 folds
+5. **Guardar Modelo**: Persiste el modelo entrenado en `vulnerability_detector.pkl`
 
-Run all cells in `train_detector.ipynb` to retrain the model.
-
----
-
-## Technical Details
-
-**Feature Extraction**:
-- AST (Abstract Syntax Tree) parsing
-- Static code analysis
-- Pattern matching for known vulnerabilities
-- Code complexity metrics
-
-**Risk Assessment**:
-- CRÍTICO: >= 90% probability
-- ALTO: 70-89% probability
-- MEDIO: 40-69% probability
-- BAJO: < 40% probability
-
-**Threshold**: 70% probability (configurable via `--threshold` parameter)
+Ejecutar todas las celdas en `train_detector.ipynb` para reentrenar el modelo.
 
 ---
 
-## Academic Project
+## Detalles Técnicos
 
-Laboratory: Computer Security and Application Modernization  
-Focus: Machine Learning for Automated Vulnerability Detection  
-Dataset Source: Real CVE/CWE vulnerability databases
+**Extracción de Características**:
+- Análisis AST (Abstract Syntax Tree)
+- Análisis estático de código
+- Coincidencia de patrones para vulnerabilidades conocidas
+- Métricas de complejidad de código
+
+**Evaluación de Riesgo**:
+- CRÍTICO: >= 90% probabilidad
+- ALTO: 70-89% probabilidad
+- MEDIO: 40-69% probabilidad
+- BAJO: < 40% probabilidad
+
+**Umbral**: 70% de probabilidad (configurable mediante parámetro `--threshold`)
+
+---
+
+## Proyecto Académico
+
+Laboratorio: Seguridad Informática y Modernización de Aplicaciones  
+Enfoque: Machine Learning para Detección Automatizada de Vulnerabilidades  
+Fuente de Dataset: Bases de datos reales CVE/CWE de vulnerabilidades
