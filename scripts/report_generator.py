@@ -37,7 +37,7 @@ def generate_html_report(scan_results_path: str, output_path: str = None):
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
     
-    print(f"📄 Reporte HTML generado: {output_path}")
+    print(f"Reporte HTML generado: {output_path}")
     return output_path
 
 
@@ -55,7 +55,7 @@ def _generate_html_content(data: Dict) -> str:
     
     # Color del estado
     status_color = '#28a745' if scan_passed else '#dc3545'
-    status_text = '✅ APROBADO' if scan_passed else '❌ RECHAZADO'
+    status_text = 'APROBADO' if scan_passed else 'RECHAZADO'
     
     # Generar tabla de archivos
     files_html = _generate_files_table(data.get('details', []))
@@ -69,7 +69,7 @@ def _generate_html_content(data: Dict) -> str:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte de Vulnerabilidades - ML Security Scanner</title>
+    <title>Informe de Análisis de Vulnerabilidades</title>
     <style>
         * {{
             margin: 0;
@@ -78,84 +78,91 @@ def _generate_html_content(data: Dict) -> str:
         }}
         
         body {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: #f5f5f5;
             padding: 20px;
-            color: #333;
+            color: #2c3e50;
+            line-height: 1.6;
         }}
         
         .container {{
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }}
         
         .header {{
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            background: #1a237e;
             color: white;
-            padding: 40px;
-            text-align: center;
+            padding: 30px 40px;
+            border-bottom: 4px solid #0d47a1;
         }}
         
         .header h1 {{
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-size: 1.8em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
         }}
         
         .header .subtitle {{
-            font-size: 1.1em;
+            font-size: 0.95em;
             opacity: 0.9;
+            font-weight: 400;
         }}
         
         .status-banner {{
             background-color: {status_color};
             color: white;
-            padding: 30px;
-            text-align: center;
-            font-size: 1.8em;
-            font-weight: bold;
+            padding: 20px 40px;
+            text-align: left;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-left: 5px solid rgba(0,0,0,0.2);
             text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }}
         
         .summary {{
             padding: 40px;
-            background: #f8f9fa;
+            background: #ffffff;
+        }}
+        
+        .summary-title {{
+            font-size: 1.3em;
+            color: #1a237e;
+            margin-bottom: 25px;
+            font-weight: 600;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
         }}
         
         .stats-grid {{
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             margin-bottom: 30px;
         }}
         
         .stat-card {{
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            background: #fafafa;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
             text-align: center;
-            transition: transform 0.2s;
-        }}
-        
-        .stat-card:hover {{
-            transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }}
         
         .stat-number {{
-            font-size: 3em;
-            font-weight: bold;
+            font-size: 2.5em;
+            font-weight: 600;
             margin: 10px 0;
         }}
         
         .stat-label {{
-            color: #666;
-            font-size: 1.1em;
+            color: #546e7a;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
         }}
         
         .critical {{ color: #dc3545; }}
@@ -173,108 +180,115 @@ def _generate_html_content(data: Dict) -> str:
         
         .files-section {{
             padding: 40px;
+            background: #f9f9f9;
         }}
         
         .files-section h2 {{
-            color: #2c3e50;
-            margin-bottom: 20px;
-            border-bottom: 3px solid #667eea;
+            color: #1a237e;
+            margin-bottom: 25px;
+            font-size: 1.3em;
+            font-weight: 600;
+            border-bottom: 2px solid #e0e0e0;
             padding-bottom: 10px;
         }}
         
         .file-card {{
             background: white;
-            border-radius: 8px;
             padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-left: 5px solid #ddd;
-            transition: all 0.3s;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+            border-left: 4px solid #ddd;
         }}
         
         .file-card:hover {{
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            border-left-color: #1a237e;
         }}
         
         .file-card.high-risk {{
-            border-left-color: #dc3545;
-            background: #fff5f5;
+            border-left-color: #c62828;
         }}
         
         .file-card.medium-risk {{
-            border-left-color: #ffc107;
-            background: #fffbf0;
+            border-left-color: #f57c00;
         }}
         
         .file-card.low-risk {{
-            border-left-color: #28a745;
-            background: #f0fff4;
+            border-left-color: #2e7d32;
         }}
         
         .file-header {{
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e0e0e0;
         }}
         
         .file-name {{
-            font-size: 1.1em;
-            font-weight: bold;
-            color: #2c3e50;
-            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #1a237e;
+            font-family: 'Consolas', 'Courier New', monospace;
         }}
         
         .risk-badge {{
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.9em;
+            padding: 5px 15px;
+            font-weight: 600;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }}
         
         .risk-badge.high {{
-            background: #dc3545;
-            color: white;
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef5350;
         }}
         
         .risk-badge.medium {{
-            background: #ffc107;
-            color: #333;
+            background: #fff3e0;
+            color: #e65100;
+            border: 1px solid #ff9800;
         }}
         
         .risk-badge.low {{
-            background: #28a745;
-            color: white;
+            background: #e8f5e9;
+            color: #1b5e20;
+            border: 1px solid #4caf50;
         }}
         
         .probability-bar {{
             width: 100%;
-            height: 30px;
-            background: #e9ecef;
-            border-radius: 15px;
+            height: 8px;
+            background: #e0e0e0;
             overflow: hidden;
-            margin: 10px 0;
+            margin: 12px 0;
         }}
         
         .probability-fill {{
             height: 100%;
-            background: linear-gradient(90deg, #28a745, #ffc107, #dc3545);
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding-right: 10px;
-            color: white;
-            font-weight: bold;
-            transition: width 0.5s ease;
+            transition: width 0.3s ease;
+        }}
+        
+        .probability-text {{
+            font-size: 0.9em;
+            color: #546e7a;
+            margin-top: 5px;
         }}
         
         .risk-factors {{
             margin-top: 15px;
+            padding: 15px;
+            background: #fafafa;
+            border-left: 3px solid #c62828;
         }}
         
         .risk-factors h4 {{
-            color: #dc3545;
+            color: #1a237e;
             margin-bottom: 10px;
+            font-size: 0.95em;
+            font-weight: 600;
         }}
         
         .risk-factors ul {{
@@ -283,27 +297,32 @@ def _generate_html_content(data: Dict) -> str:
         }}
         
         .risk-factors li {{
-            padding: 5px 0 5px 25px;
+            padding: 4px 0 4px 15px;
             position: relative;
+            font-size: 0.9em;
+            color: #546e7a;
         }}
         
         .risk-factors li:before {{
-            content: "⚠️";
+            content: "•";
             position: absolute;
             left: 0;
+            color: #c62828;
+            font-weight: bold;
         }}
         
         .footer {{
-            background: #2c3e50;
-            color: white;
+            background: #1a237e;
+            color: #b0bec5;
             text-align: center;
-            padding: 20px;
-            font-size: 0.9em;
+            padding: 15px;
+            font-size: 0.85em;
+            border-top: 3px solid #0d47a1;
         }}
         
         .timestamp {{
-            color: #95a5a6;
-            font-style: italic;
+            color: #78909c;
+            font-size: 0.9em;
         }}
         
         table {{
@@ -319,13 +338,30 @@ def _generate_html_content(data: Dict) -> str:
         }}
         
         th {{
-            background-color: #667eea;
+            background-color: #1a237e;
             color: white;
-            font-weight: bold;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
         }}
         
         tr:hover {{
-            background-color: #f5f5f5;
+            background-color: #fafafa;
+        }}
+        
+        .chart-container {{
+            background: white;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid #e0e0e0;
+        }}
+        
+        .chart-title {{
+            font-size: 1.1em;
+            color: #1a237e;
+            font-weight: 600;
+            margin-bottom: 15px;
         }}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -333,16 +369,17 @@ def _generate_html_content(data: Dict) -> str:
 <body>
     <div class="container">
         <div class="header">
-            <h1>🛡️ Reporte de Vulnerabilidades</h1>
-            <div class="subtitle">Análisis Predictivo con Machine Learning</div>
-            <div class="timestamp">{timestamp}</div>
+            <h1>Informe de Análisis de Vulnerabilidades</h1>
+            <div class="subtitle">Sistema de Detección Basado en Machine Learning</div>
+            <div class="timestamp">Generado: {timestamp}</div>
         </div>
         
         <div class="status-banner">
-            {status_text}
+            Estado del Análisis: {status_text}
         </div>
         
         <div class="summary">
+            <h3 class="summary-title">Resumen Ejecutivo</h3>
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-label">Total de Archivos</div>
@@ -363,18 +400,19 @@ def _generate_html_content(data: Dict) -> str:
             </div>
             
             <div class="chart-container">
+                <div class="chart-title">Distribución de Riesgos</div>
                 <canvas id="riskChart"></canvas>
             </div>
         </div>
         
         <div class="files-section">
-            <h2>📋 Análisis Detallado por Archivo</h2>
+            <h2>Detalle de Archivos Analizados</h2>
             {files_html}
         </div>
         
         <div class="footer">
-            <p>Generado por ML Security Scanner v1.0</p>
-            <p>Modelo: Random Forest Classifier | Umbral de alerta: 70%</p>
+            <p>Sistema de Análisis de Vulnerabilidades ML v1.0</p>
+            <p>Modelo: Random Forest Classifier | Umbral de detección: 70% | Dataset: 84,588 muestras CVE/CWE</p>
         </div>
     </div>
     
@@ -428,16 +466,25 @@ def _generate_files_table(details: List[Dict]) -> str:
             </div>
             """
         
+        # Color de barra según riesgo
+        if probability >= 0.90:
+            bar_color = '#c62828'
+        elif probability >= 0.70:
+            bar_color = '#d84315'
+        elif probability >= 0.40:
+            bar_color = '#f57c00'
+        else:
+            bar_color = '#2e7d32'
+        
         card_html = f"""
         <div class="file-card {risk_class}">
             <div class="file-header">
                 <div class="file-name">{file_path}</div>
                 <div class="risk-badge {badge_class}">{risk_level}</div>
             </div>
+            <div class="probability-text">Probabilidad de vulnerabilidad: <strong>{probability:.1%}</strong></div>
             <div class="probability-bar">
-                <div class="probability-fill" style="width: {probability*100}%">
-                    {probability:.1%}
-                </div>
+                <div class="probability-fill" style="width: {probability*100}%; background-color: {bar_color};"></div>
             </div>
             {risk_factors_html}
         </div>
@@ -547,7 +594,7 @@ def main():
     args = parser.parse_args()
     
     if not os.path.exists(args.results_file):
-        print(f"❌ Error: Archivo {args.results_file} no encontrado")
+        print(f"Error: Archivo {args.results_file} no encontrado")
         sys.exit(1)
     
     generate_html_report(args.results_file, args.output)
