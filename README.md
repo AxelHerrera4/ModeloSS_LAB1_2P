@@ -9,7 +9,7 @@
 # Abrir y ejecutar el notebook de entrenamiento:
 train_detector.ipynb
 ```
-Tiempo de entrenamiento: 8-10 minutos utilizando 84,588 muestras reales CVE/CWE (Python + JavaScript)
+Tiempo de entrenamiento: 30min a 1 hora utilizando 84,588 muestras reales CVE/CWE (Python + JavaScript)
 
 ### 2. Escanear Código
 ```bash
