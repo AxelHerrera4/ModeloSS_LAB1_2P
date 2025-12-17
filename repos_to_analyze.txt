@@ -1,0 +1,17 @@
+# Lista de Repositorios para Análisis
+# Una URL de repositorio por línea
+# Las líneas que comienzan con # son ignoradas
+
+# Ejemplos de repositorios populares de Python
+# https://github.com/psf/requests
+# https://github.com/django/django
+# https://github.com/pallets/flask
+
+# Tus propios repositorios
+# https://github.com/tu-usuario/tu-repo1
+# https://github.com/tu-usuario/tu-repo2
+# https://github.com/tu-usuario/tu-repo3
+
+# Repositorios de ejemplo (descomenta para probar)
+# https://github.com/python/cpython
+# https://github.com/numpy/numpy
