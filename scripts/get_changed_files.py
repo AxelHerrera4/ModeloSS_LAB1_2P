@@ -194,7 +194,9 @@ def main():
             "high_risk_count": 0,
             "medium_risk_count": 0,
             "total_files": 0,
-            "files": []
+            "files": [],
+            "details": [],
+            "number": 0
         }
         if args.output:
             with open(args.output, 'w') as f:
