@@ -191,12 +191,29 @@ jobs:
             comment += `- 🟠 Riesgo medio: ${scanData.medium_risk_count}\n\n`;
             comment += `### Vulnerabilidades detectadas:\n\n`;
             
-            for (const file of scanData.files) {
-              if (file.risk_level === 'HIGH' || file.risk_level === 'MEDIUM') {
-                comment += `**${file.file}**\n`;
-                comment += `- Riesgo: ${file.risk_level}\n`;
-                comment += `- Probabilidad: ${(file.vulnerability_probability * 100).toFixed(1)}%\n`;
-                comment += `- Tipo: ${file.vulnerability_type}\n\n`;
+            const details = Array.isArray(scanData.details) ? scanData.details : [];
+            for (const d of details) {
+              const nivel = d.risk_level;
+              const esAlto = nivel === 'CRÍTICO' || nivel === 'ALTO';
+              const esMedio = nivel === 'MEDIO';
+              if (esAlto || esMedio) {
+                comment += `**${d.file}**\n`;
+                comment += `- Riesgo: ${nivel}\n`;
+                comment += `- Probabilidad: ${(d.risk_probability * 100).toFixed(1)}%\n`;
+                // Factores de riesgo
+                const f = d.features || {};
+                const riesgos = [];
+                if (f.has_eval) riesgos.push('eval()');
+                if (f.has_exec) riesgos.push('exec()');
+                if (f.has_sql_concat) riesgos.push('SQL injection');
+                if (f.has_command_injection_risk) riesgos.push('Command injection');
+                if (f.has_hardcoded_secrets) riesgos.push('Secretos hardcodeados');
+                if (f.uses_subprocess_shell) riesgos.push('subprocess shell=True');
+                if (f.uses_weak_crypto) riesgos.push('Crypto débil');
+                if (f.has_path_traversal_risk) riesgos.push('Path traversal');
+                if (f.has_pickle_load) riesgos.push('pickle load inseguros');
+                if (riesgos.length) comment += `- Factores: ${riesgos.join(', ')}\n`;
+                comment += `\n`;
               }
             }
             
@@ -233,7 +250,7 @@ jobs:
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `🚨 Vulnerabilidad detectada en ${scanData.files[0]?.file || 'código'}`,
+              title: `🚨 Vulnerabilidad detectada en ${scanData.details?.[0]?.file || 'código'}`,
               body: body,
               labels: ['security', 'vulnerability', 'auto-generated']
             });
