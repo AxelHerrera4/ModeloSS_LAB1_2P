@@ -1,11 +1,13 @@
-name: 🚀 CI/CD Pipeline Completo - Dev → Test → Main
+name: 🚀 CI/CD Pipeline Completo - Main
 
 # ============================================================================
-# TRIGGER: Se activa automáticamente al crear un Pull Request de dev → test
+# TRIGGER: Se activa en push o PR a main
 # ============================================================================
 on:
+  push:
+    branches: [ main ]
   pull_request:
-    branches: [ test ]
+    branches: [ main ]
     types: [opened, synchronize, reopened]
   
   # Para testing manual
@@ -27,7 +29,7 @@ jobs:
   # ETAPA 1: REVISIÓN DE SEGURIDAD CON MODELO DE MACHINE LEARNING
   # ============================================================================
   security-scan:
-    name: 🔍 Etapa 1 - Revisión de Seguridad ML
+    name: 🔍 Análisis de Seguridad ML
     runs-on: ubuntu-latest
     outputs:
       scan_passed: ${{ steps.scan-result.outputs.passed }}
@@ -39,7 +41,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
       
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
@@ -287,7 +288,7 @@ jobs:
               `📊 **Resultados:**\n` +
               `- Total archivos analizados: ${{ steps.scan-result.outputs.total_files }}\n` +
               `- 🟢 Todos los archivos son seguros\n\n` +
-              `➡️ Continuando con el pipeline: Merge a \`test\` y ejecución de pruebas.`;
+              `➡️ Continuando con pruebas y despliegue.`;
             
             await github.rest.issues.createComment({
               owner: context.repo.owner,
@@ -297,10 +298,10 @@ jobs:
             });
 
   # ============================================================================
-  # ETAPA 2: MERGE AUTOMÁTICO A RAMA TEST + PRUEBAS
+  # ETAPA 2: PRUEBAS AUTOMATIZADAS
   # ============================================================================
-  merge-to-test:
-    name: 🔀 Etapa 2 - Merge a Test + Pruebas
+  run-tests:
+    name: 🧪 Pruebas Automatizadas
     runs-on: ubuntu-latest
     needs: security-scan
     if: needs.security-scan.outputs.scan_passed == 'true' && needs.security-scan.outputs.total_files != '0'
@@ -308,40 +309,6 @@ jobs:
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: 🔀 Merge automático a rama test
-        run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "actions@github.com"
-          
-          # Checkout a test
-          git fetch origin test
-          git checkout test
-          
-          # Merge desde la rama del PR
-          git merge --no-ff origin/${{ github.head_ref }} -m "Auto-merge: ${{ github.head_ref }} → test [security-approved]"
-          
-          # Push a test
-          git push origin test
-          
-          echo "✅ Merge automático completado: ${{ github.head_ref }} → test"
-      
-      - name: 📢 Notificar merge a test
-        run: |
-          git clone https://github.com/${{ github.repository }}.git temp_repo || true
-          cd temp_repo 2>/dev/null || cd .
-          python scripts/telegram_notifier.py \
-            --type merge_test \
-            --repo "${{ github.repository }}" \
-            --branch "${{ github.head_ref }}" \
-            --pr ${{ github.event.pull_request.number }}
-        continue-on-error: true
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
@@ -414,13 +381,13 @@ jobs:
           exit 1
 
   # ============================================================================
-  # ETAPA 3: MERGE A MAIN Y DESPLIEGUE EN PRODUCCIÓN
+  # ETAPA 3: DESPLIEGUE EN PRODUCCIÓN
   # ============================================================================
   deploy-to-production:
-    name: 🚀 Etapa 3 - Deploy a Producción
+    name: 🚀 Despliegue a Producción
     runs-on: ubuntu-latest
-    needs: [security-scan, merge-to-test]
-    if: needs.security-scan.outputs.scan_passed == 'true' && needs.security-scan.outputs.total_files != '0'
+    needs: [security-scan, run-tests]
+    if: needs.security-scan.outputs.scan_passed == 'true' && needs.security-scan.outputs.total_files != '0' && github.event_name == 'push'
     env:
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
       RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
@@ -430,29 +397,16 @@ jobs:
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: 🔀 Merge automático a rama main
-        run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "actions@github.com"
-          
-          # Checkout a main
-          git fetch origin main
-          git checkout main
-          
-          # Merge desde test
-          git merge --no-ff origin/test -m "Auto-deploy: test → main [all-checks-passed]"
-          
-          # Push a main
-          git push origin main
-          
-          echo "✅ Merge automático completado: test → main"
+      - name: 🐍 Set up Python (opcional para notificaciones)
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+        continue-on-error: true
       
       - name: 📢 Notificar inicio de despliegue
         run: |
+          pip install -r requirements.txt || true
           python scripts/telegram_notifier.py \
             --type deploy_start \
             --repo "${{ github.repository }}"
@@ -525,6 +479,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       
       - name: 💬 Comentar resultado final en PR
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -532,10 +487,8 @@ jobs:
             const comment = `## 🎉 Pipeline Completado Exitosamente\n\n` +
               `✅ **Todas las etapas del pipeline pasaron:**\n` +
               `1. ✅ Revisión de seguridad ML - APROBADO\n` +
-              `2. ✅ Merge a test - COMPLETADO\n` +
-              `3. ✅ Pruebas unitarias - TODAS PASARON\n` +
-              `4. ✅ Merge a main - COMPLETADO\n` +
-              `5. ✅ Despliegue a producción - EXITOSO\n\n` +
+              `2. ✅ Pruebas automatizadas - TODAS PASARON\n` +
+              `3. ✅ Despliegue a producción - EXITOSO\n\n` +
               `🚀 **La aplicación está ahora en producción.**\n` +
               `🌐 URL: ${{ env.DEPLOYMENT_URL || 'Configurar DEPLOYMENT_URL en secrets' }}\n\n` +
               `🎊 ¡Felicidades por el despliegue exitoso!`;
