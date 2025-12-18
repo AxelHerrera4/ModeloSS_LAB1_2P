@@ -502,6 +502,7 @@ def _extract_risk_factors(features: Dict) -> List[str]:
     risk_map = {
         'has_eval': 'Uso de eval() - ejecución de código arbitrario',
         'has_exec': 'Uso de exec() - ejecución de código arbitrario',
+        'uses_eval_js': 'Uso de eval() en JavaScript',
         'has_sql_concat': 'SQL Injection - concatenación de strings en queries',
         'has_command_injection_risk': 'Riesgo de inyección de comandos del sistema',
         'has_hardcoded_secrets': 'Secretos o credenciales hardcodeadas',
@@ -517,6 +518,8 @@ def _extract_risk_factors(features: Dict) -> List[str]:
         'has_yaml_unsafe': 'Carga insegura de YAML',
         'uses_os_system': 'Uso de os.system() - riesgo de seguridad',
         'uses_hardcoded_key': 'Clave criptográfica hardcodeada',
+        'uses_innerhtml': 'Uso de innerHTML sin sanitización (XSS)',
+        'has_xss_patterns': 'Patrones potenciales de XSS (document.write / HTML inseguro)'
     }
     
     for key, description in risk_map.items():
