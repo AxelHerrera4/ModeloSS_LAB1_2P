@@ -1,17 +1,20 @@
 # test_vulnerable.py
-# Ejemplo vulnerable: SQL Injection y uso de eval
+# Versión segura: evita SQL Injection y uso de eval
 
 def buscar_usuario(nombre):
-    # Vulnerabilidad: concatenación directa en query (SQL Injection)
-    query = "SELECT * FROM usuarios WHERE nombre = '" + nombre + "'"
-    print(query)
-    # ...ejecutar query...
+    # Solución: usar parámetros en la consulta
+    query = "SELECT * FROM usuarios WHERE nombre = ?"
+    print(query, nombre)
+    # ...ejecutar query con parámetros...
 
 def ejecutar_codigo(codigo):
-    # Vulnerabilidad: uso de eval
-    resultado = eval(codigo)
+    # Solución: no usar eval, solo operaciones seguras
+    try:
+        resultado = int(codigo) + 2  # Solo como ejemplo seguro
+    except Exception:
+        resultado = None
     print(resultado)
 
 if __name__ == "__main__":
     buscar_usuario("admin' OR '1'='1")
-    ejecutar_codigo("2 + 2")
+    ejecutar_codigo("2")
