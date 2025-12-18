@@ -56,11 +56,18 @@ jobs:
       # Notificación: Inicio de revisión de seguridad
       - name: 📢 Notificar inicio de revisión de seguridad
         run: |
-          python scripts/telegram_notifier.py \
-            --type scan_start \
-            --repo "${{ github.repository }}" \
-            --branch "${{ github.head_ref }}" \
-            --pr ${{ github.event.pull_request.number }}
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python scripts/telegram_notifier.py \
+              --type scan_start \
+              --repo "${{ github.repository }}" \
+              --branch "${{ github.head_ref }}" \
+              --pr ${{ github.event.pull_request.number }}
+          else
+            python scripts/telegram_notifier.py \
+              --type scan_start \
+              --repo "${{ github.repository }}" \
+              --branch "main"
+          fi
         continue-on-error: true
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

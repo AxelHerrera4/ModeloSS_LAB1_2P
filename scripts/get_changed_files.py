@@ -82,7 +82,7 @@ def get_changed_files_github_env() -> List[str]:
 def filter_scannable_files(files: List[str], extensions: Set[str] = None) -> List[str]:
     """
     Filtra archivos para quedarse solo con los que se pueden escanear
-    Permite excluir archivos específicos (por ejemplo, app.js, vulnerability_scanner.py)
+    Permite excluir archivos específicos (por ejemplo, app.js, vulnerability_scanner.py, tests/)
     """
     if extensions is None:
         extensions = {'.py', '.js'}  # Por defecto Python y JavaScript
@@ -109,8 +109,8 @@ def filter_scannable_files(files: List[str], extensions: Set[str] = None) -> Lis
         if path.name in excluded_files:
             continue
 
-        # Excluir carpeta scripts
-        if 'scripts' in path.parts:
+        # Excluir carpeta scripts y tests
+        if 'scripts' in path.parts or 'tests' in path.parts:
             continue
 
         # Verificar que el archivo existe
