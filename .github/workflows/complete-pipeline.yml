@@ -461,7 +461,7 @@ jobs:
         if: ${{ env.RAILWAY_TOKEN != '' }}
         run: |
           npm install -g @railway/cli
-          railway deploy --service vulnerability-scanner
+          railway deploy
         env:
           RAILWAY_TOKEN: ${{ env.RAILWAY_TOKEN }}
         continue-on-error: true
@@ -496,24 +496,3 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       
-      - name: 💬 Comentar resultado final en PR
-        if: github.event_name == 'pull_request' && github.event.pull_request.number != ''
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const comment = `## 🎉 Pipeline Completado Exitosamente\n\n` +
-              `✅ **Todas las etapas del pipeline pasaron:**\n` +
-              `1. ✅ Revisión de seguridad ML - APROBADO\n` +
-              `2. ✅ Pruebas automatizadas - TODAS PASARON\n` +
-              `3. ✅ Despliegue a producción - EXITOSO\n\n` +
-              `🚀 **La aplicación está ahora en producción.**\n` +
-              `🌐 URL: ${{ env.DEPLOYMENT_URL || 'Configurar DEPLOYMENT_URL en secrets' }}\n\n` +
-              `🎊 ¡Felicidades por el despliegue exitoso!`;
-            
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body: comment
-            });
