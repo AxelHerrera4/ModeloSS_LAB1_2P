@@ -176,31 +176,44 @@ def main():
     else:
         changed_files = get_changed_files_git(args.base, args.head)
     
-    if not changed_files:
-        print("No se encontraron archivos modificados", file=sys.stderr)
-        sys.exit(0)
-    
     # Filtrar archivos escaneables
     extensions = set(args.extensions)
     scannable_files = filter_scannable_files(changed_files, extensions)
-    
+
     # Resultados
     result = {
         'total_changed': len(changed_files),
         'scannable': len(scannable_files),
         'files': scannable_files
     }
-    
-    # Output
+
+    # Si no hay archivos escaneables, crear reporte vacío para que el pipeline continúe
+    if not scannable_files:
+        empty_scan = {
+            "scan_passed": True,
+            "high_risk_count": 0,
+            "medium_risk_count": 0,
+            "total_files": 0,
+            "files": []
+        }
+        if args.output:
+            with open(args.output, 'w') as f:
+                json.dump(empty_scan, f, indent=2)
+            print(f"Reporte vacío generado en: {args.output}")
+        else:
+            print(json.dumps(empty_scan, indent=2))
+        print("No hay archivos escaneables. El pipeline continuará.", file=sys.stderr)
+        return
+
+    # Output normal si hay archivos escaneables
     if args.output:
         with open(args.output, 'w') as f:
             json.dump(result, f, indent=2)
         print(f"Resultados guardados en: {args.output}")
     else:
-        # Imprimir uno por línea para uso en scripts
         for file in scannable_files:
             print(file)
-    
+
     print(f"\nArchivos modificados: {len(changed_files)}", file=sys.stderr)
     print(f"Archivos a escanear: {len(scannable_files)}", file=sys.stderr)
 
