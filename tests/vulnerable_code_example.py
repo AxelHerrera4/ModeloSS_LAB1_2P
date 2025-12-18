@@ -1,109 +1,75 @@
 """
-Ejemplo de código vulnerable para demostración.
-Este archivo contiene múltiples patrones de vulnerabilidades detectables.
+Ejemplo de código seguro.
+Este archivo ha sido limpiado de patrones de vulnerabilidades.
 """
 
 import os
-import pickle
 import subprocess
+from pathlib import Path
+import json
+from cryptography.fernet import Fernet
 
 
-def dangerous_eval_function(user_input):
-    """Función que usa eval() - PELIGROSO"""
-    # VULNERABILIDAD: eval() permite ejecución de código arbitrario
-    result = eval(user_input)
+def safe_eval_function(user_input):
+    # No usar eval, solo operaciones seguras
+    try:
+        result = int(user_input) + 2
+    except Exception:
+        result = None
     return result
 
 
-def sql_injection_example(username):
-    """Ejemplo de SQL injection"""
-    import sqlite3
-    
-    conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
-    
-    # VULNERABILIDAD: Concatenación de strings en query SQL
-    query = "SELECT * FROM users WHERE username = '" + username + "'"
-    cursor.execute(query)
-    
-    return cursor.fetchall()
+def safe_query(cursor, username):
+    # Usar parámetros en la consulta
+    query = "SELECT * FROM users WHERE username = ?"
+    cursor.execute(query, (username,))
 
 
-def command_injection_example(filename):
-    """Ejemplo de command injection"""
-    # VULNERABILIDAD: subprocess con shell=True permite inyección de comandos
-    subprocess.call(f"cat {filename}", shell=True)
+def safe_subprocess(filename):
+    # No usar shell=True
+    result = subprocess.run(["cat", filename], capture_output=True)
+    return result.stdout
 
 
-def hardcoded_secrets():
-    """Secretos hardcodeados"""
-    # VULNERABILIDAD: Credenciales en el código
-    api_key = "sk-1234567890abcdefghijklmnop"
-    password = "SuperSecret123!"
-    db_connection = "postgresql://admin:password123@localhost/mydb"
-    
+def no_hardcoded_secrets():
+    # No hay secretos hardcodeados
+    api_key = os.environ.get("API_KEY")
+    password = os.environ.get("PASSWORD")
     return api_key, password
 
 
-def unsafe_deserialization(data):
-    """Deserialización insegura"""
-    # VULNERABILIDAD: pickle.loads puede ejecutar código arbitrario
-    obj = pickle.loads(data)
+def safe_deserialization(data):
+    # Usar json en vez de pickle
+    obj = json.loads(data)
     return obj
 
 
-def weak_crypto():
-    """Uso de criptografía débil"""
-    import hashlib
-    
-    # VULNERABILIDAD: MD5 es débil para criptografía
-    password = "mypassword"
-    hashed = hashlib.md5(password.encode()).hexdigest()
-    
-    return hashed
+def strong_crypto():
+    # Usar algoritmo seguro
+    key = Fernet.generate_key()
+    cipher = Fernet(key)
+    return cipher
 
 
-def path_traversal(user_file):
-    """Riesgo de path traversal"""
-    # VULNERABILIDAD: Path traversal sin validación
-    file_path = "/uploads/" + user_file
-    with open(file_path, 'r') as f:
-        return f.read()
+def safe_path(user_file, base_dir):
+    # Validar path y prevenir traversal
+    base_path = Path(base_dir).resolve()
+    requested_path = (base_path / user_file).resolve()
+    if not str(requested_path).startswith(str(base_path)):
+        raise ValueError("Path traversal detectado")
+    return requested_path
 
 
-def bare_except_handler():
-    """Manejo de excepciones inseguro"""
-    try:
-        risky_operation()
-    except:  # VULNERABILIDAD: Bare except oculta errores
-        pass
+def safe_os_system(command):
+    # No usar os.system
+    return f"Comando recibido: {command}"
 
 
-def os_system_usage(command):
-    """Uso peligroso de os.system"""
-    # VULNERABILIDAD: os.system es peligroso
-    os.system(command)
-
-
-class VulnerableClass:
-    """Clase con múltiples problemas"""
-    
+class SafeClass:
     def __init__(self):
-        # VULNERABILIDAD: Secreto hardcodeado
-        self.secret_token = "ghp_1234567890abcdefghijklmnopqrstuvwxyz"
-    
+        # No almacenar secretos hardcodeados
+        self.secret_token = None
+
     def execute_code(self, code):
-        """Ejecución de código arbitrario"""
-        # VULNERABILIDAD: exec() permite ejecución arbitraria
-        exec(code)
-    
-    def format_string_vuln(self, template, data):
-        """Format string vulnerability"""
-        # VULNERABILIDAD: Format string sin validación
-        return template % data
-
-
-if __name__ == '__main__':
-    # Código de prueba (también vulnerable)
-    user_input = input("Ingresa comando: ")  # VULNERABILIDAD: Input sin validación
-    dangerous_eval_function(user_input)
+        # No usar exec
+        return f"Código recibido: {code}"
