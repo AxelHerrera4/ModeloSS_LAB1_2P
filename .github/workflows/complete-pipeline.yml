@@ -185,7 +185,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       
       - name: ❌ Marcar PR como rechazado y agregar etiqueta
-        if: steps.scan-result.outputs.passed == 'false'
+        if: steps.scan-result.outputs.passed == 'false' && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -250,7 +250,7 @@ jobs:
             });
       
       - name: 📝 Crear issue automática para vulnerabilidad
-        if: steps.scan-result.outputs.passed == 'false'
+        if: steps.scan-result.outputs.passed == 'false' && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -296,7 +296,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       
       - name: ✅ Comentar aprobación en PR
-        if: steps.scan-result.outputs.passed == 'true'
+        if: steps.scan-result.outputs.passed == 'true' && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -379,7 +379,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       
       - name: 🏷️ Agregar etiqueta si tests fallan
-        if: steps.tests.outputs.tests_failed == 'true'
+        if: steps.tests.outputs.tests_failed == 'true' && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
