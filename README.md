@@ -1,3 +1,68 @@
+# CI/CD Pipeline Completo con ML Security Scanner
+
+## Tabla de Contenidos
+ - [Instrucciones de Setup del Pipeline](#instrucciones-de-setup-del-pipeline)
+ - [Entrenamiento del Modelo ML](#entrenamiento-del-modelo-ml)
+ - [Bot de Telegram](#bot-de-telegram)
+ - [Despliegue en Producción](#despliegue-en-producción)
+
+---
+
+## Instrucciones de Setup del Pipeline
+
+1. **Clona el repositorio:**
+  ```bash
+  git clone https://github.com/AxelHerrera4/ModeloSS_LAB1_2P.git
+  cd ModeloSS_LAB1_2P
+  ```
+2. **Configura los secrets en GitHub:**
+  - `DOCKER_USERNAME`: Tu usuario de Docker Hub
+  - `DOCKER_PASSWORD`: Tu token de Docker Hub (con permisos de push)
+  - `RAILWAY_TOKEN`: Token de deploy de Railway
+  - `TELEGRAM_BOT_TOKEN`: Token de tu bot de Telegram (de @BotFather)
+  - `TELEGRAM_CHAT_ID`: ID del chat/grupo/canal de Telegram
+
+3. **Estructura del pipeline:**
+  - Análisis de seguridad ML automático en cada PR y push a main
+  - Pruebas automatizadas con pytest
+  - Despliegue automático a Railway si todo pasa
+  - Notificaciones a Telegram en cada etapa
+
+4. **Cómo probar el pipeline:**
+  - Haz un PR o push a main y revisa los resultados en la pestaña "Actions" de GitHub
+
+---
+
+## Entrenamiento del Modelo ML
+
+- El modelo de detección de vulnerabilidades fue entrenado usando el notebook [`train_detector.ipynb`](train_detector.ipynb).
+- El notebook incluye:
+  - Preprocesamiento de datos
+  - Extracción de features
+  - Entrenamiento y validación del modelo
+  - Métricas de cobertura: **90%**
+- Puedes abrir el notebook en Jupyter y reentrenar el modelo si lo deseas.
+
+---
+
+## Bot de Telegram
+
+- El bot de Telegram notifica automáticamente los resultados del pipeline.
+- **Bot utilizado:** @BotFather para crear el bot y obtener el token.
+- **Enlace para contactar al bot:** [Abrir Telegram y buscar @BotFather](https://t.me/BotFather)
+- **Ejemplo de notificación:**
+  ![Ejemplo de notificación](./docs/telegram_example.png)
+
+---
+
+## Despliegue en Producción
+
+- El API y escáner están desplegados en Railway:
+- **Enlace de producción:** [https://pipe-production-c17d.up.railway.app](https://pipe-production-c17d.up.railway.app)
+
+---
+
+Para dudas o soporte, abre un issue o contacta por Telegram.
 # Sistema de Detección de Vulnerabilidades con Machine Learning
 
 **Pipeline CI/CD Seguro con Integración de IA para Detección Automática de Vulnerabilidades**
@@ -571,6 +636,8 @@ Para problemas o preguntas:
 ---
 
 **🔒 Mantén tu código seguro con Machine Learning** 🤖
-#   T e s t  
- #   T e s t   a c t i v a c i � n   d e l   p i p e l i n e  
+#   T e s t 
+ 
+ #   T e s t   a c t i v a c i � n   d e l   p i p e l i n e 
+ 
  
