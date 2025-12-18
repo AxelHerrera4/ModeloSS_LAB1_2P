@@ -66,13 +66,24 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       
-      - name: 🔍 Obtener archivos modificados en el PR
+      - name: 🔍 Obtener archivos modificados
         id: changed-files
         run: |
-          echo "Analizando diff del PR..."
+          echo "Analizando archivos modificados..."
+          
+          # Detectar si es PR o push directo
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            # Para push, comparar con el commit anterior
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+          fi
+          
           python scripts/get_changed_files.py \
-            --base ${{ github.event.pull_request.base.sha }} \
-            --head ${{ github.event.pull_request.head.sha }} \
+            --base "$BASE_SHA" \
+            --head "$HEAD_SHA" \
             --output changed_files.json
           
           FILE_COUNT=$(jq -r '.scannable' changed_files.json)
