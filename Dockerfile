@@ -47,10 +47,5 @@ USER scanner
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD python -c "import os; exit(0 if os.path.exists('ml_model/vulnerability_detector.pkl') else 1)"
 
-# Punto de entrada
-ENTRYPOINT ["python"]
-CMD ["api.py"]
-ENTRYPOINT ["python", "scripts/vulnerability_scanner.py"]
-
-# Comando por defecto (se puede sobrescribir)
-CMD ["--help"]
+# Punto de entrada: Ejecutar la API Flask por defecto
+ENTRYPOINT ["python", "api.py"]
