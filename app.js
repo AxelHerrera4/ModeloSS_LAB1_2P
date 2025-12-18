@@ -12,7 +12,7 @@ app.use(express.json());
 
 // Ruta principal
 app.get('/', (req, res) => {
-  res.send('¡Despliegue seguro en Railway funcionando!');
+  res.send('¡Despliegue actualizado en Railway! 🚀 Cambios reflejados en producción.');
 });
 
 // Ruta de prueba segura
