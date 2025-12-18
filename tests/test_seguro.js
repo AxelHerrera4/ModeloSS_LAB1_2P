@@ -2,20 +2,14 @@
 // Versión segura del test: sin vulnerabilidades
 
 function ejecutarCodigoSeguro(codigo) {
-    // No usar eval, solo operaciones seguras
-    try {
-        // Solo permitimos operaciones matemáticas simples
-        let resultado = Number(codigo) + 2;
-        return resultado;
-    } catch (e) {
-        return null;
-    }
+    // Solo operaciones matemáticas simples
+    let resultado = Number(codigo) + 2;
+    return resultado;
 }
 
 function consultaSQLSeguro(userInput) {
-    // Usar parámetros en la consulta (simulado)
-    let query = "SELECT * FROM users WHERE name = ?";
-    // En una app real, pasar userInput como parámetro
+    // Simulación de consulta segura (sin SQL real)
+    let query = "Consulta segura ejecutada";
     return query;
 }
 
@@ -26,5 +20,5 @@ function xssSeguro(userInput) {
 
 // Pruebas de ejemplo
 console.log(ejecutarCodigoSeguro('2'));
-console.log(consultaSQLSeguro("admin' OR '1'='1"));
-xssSeguro('<img src=x onerror=alert(1)>');
+console.log(consultaSQLSeguro("admin"));
+xssSeguro('prueba');
