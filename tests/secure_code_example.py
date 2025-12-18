@@ -190,8 +190,7 @@ def main():
     """Función principal segura"""
     try:
         # Cargar configuración de forma segura
-            name = safe_input_validation("Mundo")
-            greet(name)
+        config = load_config_safely()
         
         # Procesar datos
         processor = SecureClass()
