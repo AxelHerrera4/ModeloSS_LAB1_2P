@@ -1,58 +1,23 @@
-// Código JavaScript con múltiples vulnerabilidades
+// vulnerable_code_js.js
+// Ejemplo de código vulnerable para pruebas ML
 
-// 1. Uso de eval() - Code Injection
-function processUserInput(userInput) {
-    return eval(userInput);
+function ejecutarCodigo(codigo) {
+    // Vulnerabilidad: uso de eval
+    return eval(codigo);
 }
 
-// 2. SQL Injection
-function getUserData(username) {
-    const query = "SELECT * FROM users WHERE username = '" + username + "'";
-    return db.execute(query);
+function consultaSQL(userInput) {
+    // Vulnerabilidad: concatenación directa en consulta SQL
+    let query = "SELECT * FROM users WHERE name = '" + userInput + "'";
+    return query;
 }
 
-// 3. XSS - Cross-Site Scripting
-function displayMessage(message) {
-    document.getElementById('output').innerHTML = message;
+function xssVulnerable(userInput) {
+    // Vulnerabilidad: asignación directa a innerHTML
+    document.getElementById('output').innerHTML = userInput;
 }
 
-// 4. Hardcoded credentials
-const API_KEY = "sk-1234567890abcdef";
-const DB_PASSWORD = "admin123";
-
-// 5. Command Injection
-const { exec } = require('child_process');
-function runCommand(cmd) {
-    exec('ls ' + cmd, (error, stdout) => {
-        console.log(stdout);
-    });
-}
-
-// 6. Insecure Random
-function generateToken() {
-    return Math.random().toString(36).substring(7);
-}
-
-// 7. Path Traversal
-const fs = require('fs');
-function readFile(filename) {
-    return fs.readFileSync('/data/' + filename, 'utf8');
-}
-
-// 8. Prototype Pollution
-function merge(target, source) {
-    for (let key in source) {
-        target[key] = source[key];
-    }
-    return target;
-}
-
-// 9. Insecure Deserialization
-function deserialize(data) {
-    return JSON.parse(data);
-}
-
-// 10. NoSQL Injection
-function findUser(username) {
-    return db.collection('users').find({ username: username });
-}
+// Pruebas de ejemplo
+console.log(ejecutarCodigo('2+2'));
+console.log(consultaSQL("admin' OR '1'='1"));
+xssVulnerable('<img src=x onerror=alert(1)>');
