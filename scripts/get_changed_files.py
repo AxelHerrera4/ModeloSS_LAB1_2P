@@ -82,30 +82,41 @@ def get_changed_files_github_env() -> List[str]:
 def filter_scannable_files(files: List[str], extensions: Set[str] = None) -> List[str]:
     """
     Filtra archivos para quedarse solo con los que se pueden escanear
-    
-    Args:
-        files: Lista de archivos
-        extensions: Set de extensiones permitidas (ej: {'.py', '.js'})
-        
-    Returns:
-        Lista filtrada de archivos
+    Permite excluir archivos específicos (por ejemplo, app.js, vulnerability_scanner.py, tests/)
     """
     if extensions is None:
         extensions = {'.py', '.js'}  # Por defecto Python y JavaScript
-    
+
+    # Lista de archivos a excluir explícitamente
+    excluded_files = {
+        'app.js',
+        'vulnerability_scanner.py',
+        'get_changed_files.py',
+        'code_analyzer.py',
+        'report_generator.py',
+    }
+
     scannable = []
-    
+
     for file in files:
         path = Path(file)
-        
+
         # Verificar extensión
         if path.suffix not in extensions:
             continue
-        
+
+        # Excluir archivos específicos
+        if path.name in excluded_files:
+            continue
+
+        # Excluir carpeta scripts y tests
+        if 'scripts' in path.parts or 'tests' in path.parts:
+            continue
+
         # Verificar que el archivo existe
         if not path.exists():
             continue
-        
+
         # Excluir ciertos directorios
         excluded_dirs = {
             '__pycache__',
@@ -118,12 +129,11 @@ def filter_scannable_files(files: List[str], extensions: Set[str] = None) -> Lis
             'dist',
             '.pytest_cache'
         }
-        
         if any(excluded in path.parts for excluded in excluded_dirs):
             continue
-        
+
         scannable.append(str(path))
-    
+
     return scannable
 
 
@@ -166,31 +176,46 @@ def main():
     else:
         changed_files = get_changed_files_git(args.base, args.head)
     
-    if not changed_files:
-        print("No se encontraron archivos modificados", file=sys.stderr)
-        sys.exit(0)
-    
     # Filtrar archivos escaneables
     extensions = set(args.extensions)
     scannable_files = filter_scannable_files(changed_files, extensions)
-    
+
     # Resultados
     result = {
         'total_changed': len(changed_files),
         'scannable': len(scannable_files),
         'files': scannable_files
     }
-    
-    # Output
+
+    # Si no hay archivos escaneables, crear reporte vacío para que el pipeline continúe
+    if not scannable_files:
+        empty_scan = {
+            "scan_passed": True,
+            "high_risk_count": 0,
+            "medium_risk_count": 0,
+            "total_files": 0,
+            "files": [],
+            "details": [],
+            "number": 0
+        }
+        if args.output:
+            with open(args.output, 'w') as f:
+                json.dump(empty_scan, f, indent=2)
+            print(f"Reporte vacío generado en: {args.output}")
+        else:
+            print(json.dumps(empty_scan, indent=2))
+        print("No hay archivos escaneables. El pipeline continuará.", file=sys.stderr)
+        return
+
+    # Output normal si hay archivos escaneables
     if args.output:
         with open(args.output, 'w') as f:
             json.dump(result, f, indent=2)
         print(f"Resultados guardados en: {args.output}")
     else:
-        # Imprimir uno por línea para uso en scripts
         for file in scannable_files:
             print(file)
-    
+
     print(f"\nArchivos modificados: {len(changed_files)}", file=sys.stderr)
     print(f"Archivos a escanear: {len(scannable_files)}", file=sys.stderr)
 

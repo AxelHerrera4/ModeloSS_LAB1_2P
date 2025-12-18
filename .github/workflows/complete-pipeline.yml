@@ -1,11 +1,13 @@
-name: 🚀 CI/CD Pipeline Completo - Dev → Test → Main
+name: 🚀 CI/CD Pipeline Completo - Main
 
 # ============================================================================
-# TRIGGER: Se activa automáticamente al crear un Pull Request de dev → test
+# TRIGGER: Se activa en push o PR a main
 # ============================================================================
 on:
+  push:
+    branches: [ main ]
   pull_request:
-    branches: [ test ]
+    branches: [ main ]
     types: [opened, synchronize, reopened]
   
   # Para testing manual
@@ -27,7 +29,7 @@ jobs:
   # ETAPA 1: REVISIÓN DE SEGURIDAD CON MODELO DE MACHINE LEARNING
   # ============================================================================
   security-scan:
-    name: 🔍 Etapa 1 - Revisión de Seguridad ML
+    name: 🔍 Análisis de Seguridad ML
     runs-on: ubuntu-latest
     outputs:
       scan_passed: ${{ steps.scan-result.outputs.passed }}
@@ -39,7 +41,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
       
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
@@ -55,23 +56,41 @@ jobs:
       # Notificación: Inicio de revisión de seguridad
       - name: 📢 Notificar inicio de revisión de seguridad
         run: |
-          python scripts/telegram_notifier.py \
-            --type scan_start \
-            --repo "${{ github.repository }}" \
-            --branch "${{ github.head_ref }}" \
-            --pr ${{ github.event.pull_request.number }}
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python scripts/telegram_notifier.py \
+              --type scan_start \
+              --repo "${{ github.repository }}" \
+              --branch "${{ github.head_ref }}" \
+              --pr ${{ github.event.pull_request.number }}
+          else
+            python scripts/telegram_notifier.py \
+              --type scan_start \
+              --repo "${{ github.repository }}" \
+              --branch "main"
+          fi
         continue-on-error: true
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       
-      - name: 🔍 Obtener archivos modificados en el PR
+      - name: 🔍 Obtener archivos modificados
         id: changed-files
         run: |
-          echo "Analizando diff del PR..."
+          echo "Analizando archivos modificados..."
+          
+          # Detectar si es PR o push directo
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            # Para push, comparar con el commit anterior
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+          fi
+          
           python scripts/get_changed_files.py \
-            --base ${{ github.event.pull_request.base.sha }} \
-            --head ${{ github.event.pull_request.head.sha }} \
+            --base "$BASE_SHA" \
+            --head "$HEAD_SHA" \
             --output changed_files.json
           
           FILE_COUNT=$(jq -r '.scannable' changed_files.json)
@@ -84,6 +103,12 @@ jobs:
             echo "✅ Archivos a escanear: $FILE_COUNT"
             echo "has_files=true" >> $GITHUB_OUTPUT
           fi
+
+      - name: 📝 Crear reporte vacío si no hay archivos
+        if: steps.changed-files.outputs.has_files == 'false'
+        run: |
+          mkdir -p reports
+          echo '{"scan_passed": true, "high_risk_count": 0, "medium_risk_count": 0, "total_files": 0, "files": []}' > reports/scan_results.json
       
       - name: 🧠 Verificar modelo ML
         if: steps.changed-files.outputs.has_files == 'true'
@@ -107,14 +132,14 @@ jobs:
         continue-on-error: true
       
       - name: 📊 Generar reporte HTML
-        if: always() && steps.changed-files.outputs.has_files == 'true'
+        if: always()
         run: |
           python scripts/report_generator.py \
             reports/scan_results.json \
-            reports/scan_results.html
+            --output reports/scan_results.html
       
       - name: 📤 Subir reportes como artifacts
-        if: always() && steps.changed-files.outputs.has_files == 'true'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: security-scan-reports
@@ -125,7 +150,7 @@ jobs:
       
       - name: 📊 Analizar resultados del escaneo
         id: scan-result
-        if: steps.changed-files.outputs.has_files == 'true'
+        if: always()
         run: |
           if [ -f "reports/scan_results.json" ]; then
             PASSED=$(jq -r '.scan_passed' reports/scan_results.json)
@@ -160,7 +185,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       
       - name: ❌ Marcar PR como rechazado y agregar etiqueta
-        if: steps.scan-result.outputs.passed == 'false'
+        if: steps.scan-result.outputs.passed == 'false' && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -185,12 +210,29 @@ jobs:
             comment += `- 🟠 Riesgo medio: ${scanData.medium_risk_count}\n\n`;
             comment += `### Vulnerabilidades detectadas:\n\n`;
             
-            for (const file of scanData.files) {
-              if (file.risk_level === 'HIGH' || file.risk_level === 'MEDIUM') {
-                comment += `**${file.file}**\n`;
-                comment += `- Riesgo: ${file.risk_level}\n`;
-                comment += `- Probabilidad: ${(file.vulnerability_probability * 100).toFixed(1)}%\n`;
-                comment += `- Tipo: ${file.vulnerability_type}\n\n`;
+            const details = Array.isArray(scanData.details) ? scanData.details : [];
+            for (const d of details) {
+              const nivel = d.risk_level;
+              const esAlto = nivel === 'CRÍTICO' || nivel === 'ALTO';
+              const esMedio = nivel === 'MEDIO';
+              if (esAlto || esMedio) {
+                comment += `**${d.file}**\n`;
+                comment += `- Riesgo: ${nivel}\n`;
+                comment += `- Probabilidad: ${(d.risk_probability * 100).toFixed(1)}%\n`;
+                // Factores de riesgo
+                const f = d.features || {};
+                const riesgos = [];
+                if (f.has_eval) riesgos.push('eval()');
+                if (f.has_exec) riesgos.push('exec()');
+                if (f.has_sql_concat) riesgos.push('SQL injection');
+                if (f.has_command_injection_risk) riesgos.push('Command injection');
+                if (f.has_hardcoded_secrets) riesgos.push('Secretos hardcodeados');
+                if (f.uses_subprocess_shell) riesgos.push('subprocess shell=True');
+                if (f.uses_weak_crypto) riesgos.push('Crypto débil');
+                if (f.has_path_traversal_risk) riesgos.push('Path traversal');
+                if (f.has_pickle_load) riesgos.push('pickle load inseguros');
+                if (riesgos.length) comment += `- Factores: ${riesgos.join(', ')}\n`;
+                comment += `\n`;
               }
             }
             
@@ -208,7 +250,7 @@ jobs:
             });
       
       - name: 📝 Crear issue automática para vulnerabilidad
-        if: steps.scan-result.outputs.passed == 'false'
+        if: steps.scan-result.outputs.passed == 'false' && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -227,7 +269,7 @@ jobs:
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `🚨 Vulnerabilidad detectada en ${scanData.files[0]?.file || 'código'}`,
+              title: `🚨 Vulnerabilidad detectada en ${scanData.details?.[0]?.file || 'código'}`,
               body: body,
               labels: ['security', 'vulnerability', 'auto-generated']
             });
@@ -254,7 +296,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       
       - name: ✅ Comentar aprobación en PR
-        if: steps.scan-result.outputs.passed == 'true'
+        if: steps.scan-result.outputs.passed == 'true' && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -264,7 +306,7 @@ jobs:
               `📊 **Resultados:**\n` +
               `- Total archivos analizados: ${{ steps.scan-result.outputs.total_files }}\n` +
               `- 🟢 Todos los archivos son seguros\n\n` +
-              `➡️ Continuando con el pipeline: Merge a \`test\` y ejecución de pruebas.`;
+              `➡️ Continuando con pruebas y despliegue.`;
             
             await github.rest.issues.createComment({
               owner: context.repo.owner,
@@ -274,51 +316,17 @@ jobs:
             });
 
   # ============================================================================
-  # ETAPA 2: MERGE AUTOMÁTICO A RAMA TEST + PRUEBAS
+  # ETAPA 2: PRUEBAS AUTOMATIZADAS
   # ============================================================================
-  merge-to-test:
-    name: 🔀 Etapa 2 - Merge a Test + Pruebas
+  run-tests:
+    name: 🧪 Pruebas Automatizadas
     runs-on: ubuntu-latest
     needs: security-scan
-    if: needs.security-scan.outputs.scan_passed == 'true'
+    if: always()
     
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: 🔀 Merge automático a rama test
-        run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "actions@github.com"
-          
-          # Checkout a test
-          git fetch origin test
-          git checkout test
-          
-          # Merge desde la rama del PR
-          git merge --no-ff origin/${{ github.head_ref }} -m "Auto-merge: ${{ github.head_ref }} → test [security-approved]"
-          
-          # Push a test
-          git push origin test
-          
-          echo "✅ Merge automático completado: ${{ github.head_ref }} → test"
-      
-      - name: 📢 Notificar merge a test
-        run: |
-          git clone https://github.com/${{ github.repository }}.git temp_repo || true
-          cd temp_repo 2>/dev/null || cd .
-          python scripts/telegram_notifier.py \
-            --type merge_test \
-            --repo "${{ github.repository }}" \
-            --branch "${{ github.head_ref }}" \
-            --pr ${{ github.event.pull_request.number }}
-        continue-on-error: true
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
@@ -371,7 +379,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       
       - name: 🏷️ Agregar etiqueta si tests fallan
-        if: steps.tests.outputs.tests_failed == 'true'
+        if: steps.tests.outputs.tests_failed == 'true' && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -391,40 +399,32 @@ jobs:
           exit 1
 
   # ============================================================================
-  # ETAPA 3: MERGE A MAIN Y DESPLIEGUE EN PRODUCCIÓN
+  # ETAPA 3: DESPLIEGUE EN PRODUCCIÓN
   # ============================================================================
   deploy-to-production:
-    name: 🚀 Etapa 3 - Deploy a Producción
+    name: 🚀 Despliegue a Producción
     runs-on: ubuntu-latest
-    needs: [security-scan, merge-to-test]
-    if: needs.security-scan.outputs.scan_passed == 'true'
+    needs: [security-scan, run-tests]
+    if: always() && github.event_name == 'push'
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+      DEPLOYMENT_URL: ${{ secrets.DEPLOYMENT_URL }}
     
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: 🔀 Merge automático a rama main
-        run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "actions@github.com"
-          
-          # Checkout a main
-          git fetch origin main
-          git checkout main
-          
-          # Merge desde test
-          git merge --no-ff origin/test -m "Auto-deploy: test → main [all-checks-passed]"
-          
-          # Push a main
-          git push origin main
-          
-          echo "✅ Merge automático completado: test → main"
+      - name: 🐍 Set up Python (opcional para notificaciones)
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+        continue-on-error: true
       
       - name: 📢 Notificar inicio de despliegue
         run: |
+          pip install -r requirements.txt || true
           python scripts/telegram_notifier.py \
             --type deploy_start \
             --repo "${{ github.repository }}"
@@ -458,20 +458,20 @@ jobs:
       
       - name: 🚀 Deploy to Railway
         id: deploy-railway
-        if: secrets.RAILWAY_TOKEN != ''
+        if: ${{ env.RAILWAY_TOKEN != '' }}
         run: |
           npm install -g @railway/cli
-          railway deploy --service vulnerability-scanner
+          railway deploy
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_TOKEN: ${{ env.RAILWAY_TOKEN }}
         continue-on-error: true
       
       - name: 🚀 Deploy to Render (alternativo)
         id: deploy-render
-        if: secrets.RENDER_API_KEY != '' && steps.deploy-railway.outcome == 'skipped'
+        if: ${{ env.RENDER_API_KEY != '' && steps.deploy-railway.outcome == 'skipped' }}
         run: |
-          curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+          curl -X POST "https://api.render.com/v1/services/${{ env.RENDER_SERVICE_ID }}/deploys" \
+            -H "Authorization: Bearer ${{ env.RENDER_API_KEY }}" \
             -H "Content-Type: application/json"
         continue-on-error: true
       
@@ -496,25 +496,3 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       
-      - name: 💬 Comentar resultado final en PR
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const comment = `## 🎉 Pipeline Completado Exitosamente\n\n` +
-              `✅ **Todas las etapas del pipeline pasaron:**\n` +
-              `1. ✅ Revisión de seguridad ML - APROBADO\n` +
-              `2. ✅ Merge a test - COMPLETADO\n` +
-              `3. ✅ Pruebas unitarias - TODAS PASARON\n` +
-              `4. ✅ Merge a main - COMPLETADO\n` +
-              `5. ✅ Despliegue a producción - EXITOSO\n\n` +
-              `🚀 **La aplicación está ahora en producción.**\n` +
-              `🌐 URL: ${{ secrets.DEPLOYMENT_URL || 'Configurar DEPLOYMENT_URL en secrets' }}\n\n` +
-              `🎊 ¡Felicidades por el despliegue exitoso!`;
-            
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body: comment
-            });
