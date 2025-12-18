@@ -444,7 +444,7 @@ Error: Modelo no encontrado en ml_model/vulnerability_detector.pkl
 
 **Solución**:
 ```bash
-# Entrenar el modelo
+# Entrenar el modeloo
 python ml_model/model.py
 
 # O descargar desde releases si existe
@@ -500,36 +500,36 @@ Si el scanner marca código seguro como vulnerable:
 
 ---
 
-## Contribución
+## 🤝 Contribución
 
 ### Agregar Nuevas Vulnerabilidades al Dataset
 
-1. Editar Dataset/data_Python.csv o data_JavaScript.csv
-2. Agregar filas con el formato: codigo_vulnerable,1 o codigo_seguro,0
-3. Re-entrenar modelo: python ml_model/model.py
-4. Validar con tests: pytest tests/
+1. Editar `Dataset/data_Python.csv` o `data_JavaScript.csv`
+2. Agregar filas con el formato: `codigo_vulnerable,1` o `codigo_seguro,0`
+3. Re-entrenar modelo: `python ml_model/model.py`
+4. Validar con tests: `pytest tests/`
 
 ### Extender Características de Análisis
 
-Editar [scripts/code_analyzer.py](scripts/code_analyzer.py) para agregar nuevas características en la clase CodeFeatures.
+Editar [`scripts/code_analyzer.py`](scripts/code_analyzer.py) para agregar nuevas características en la clase `CodeFeatures`.
 
 ---
 
-## Licencia y Proyecto Académico
+## 📝 Licencia y Proyecto Académico
 
-**Proyecto**: Laboratorio de Seguridad Informática y Modernización de Aplicaciones
-**Objetivo**: Pipeline CI/CD Seguro con Integración de IA para Detección Automática de Vulnerabilidades
+**Proyecto**: Laboratorio de Seguridad Informática y Modernización de Aplicaciones  
+**Objetivo**: Pipeline CI/CD Seguro con Integración de IA para Detección Automática de Vulnerabilidades  
 **Dataset**: Bases de datos reales CVE/CWE
 
 ---
 
-## Soporte
+## 📞 Soporte
 
 Para problemas o preguntas:
-1. Revisar la sección de [Resolución de Problemas](#resolución-de-problemas)
+1. Revisar la sección de [Resolución de Problemas](#-resolución-de-problemas)
 2. Consultar los [tests de ejemplo](tests/)
 3. Crear un issue en el repositorio
 
 ---
 
-**Mantén tu código seguro con Machine Learning**
+**🔒 Mantén tu código seguro con Machine Learning** 🤖
