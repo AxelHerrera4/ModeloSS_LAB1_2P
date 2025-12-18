@@ -27,16 +27,4 @@ services:
       - RISK_THRESHOLD=0.70
     command: ["--target", "/code", "--output", "/app/reports/docker_scan_results.json"]
 
-  # Entrenamiento del modelo (opcional)
-  model-trainer:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: vulnerability-scanner:latest
-    container_name: ml-model-trainer
-    volumes:
-      - ./Dataset:/app/Dataset:ro
-      - ./ml_model:/app/ml_model:rw
-      - ./train_detector.ipynb:/app/train_detector.ipynb:ro
-    working_dir: /app
-    command: ["python", "ml_model/model.py"]
+
