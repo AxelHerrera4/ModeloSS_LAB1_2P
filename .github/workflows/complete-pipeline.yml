@@ -149,8 +149,8 @@ jobs:
           retention-days: 90
       
       - name: 📊 Analizar resultados del escaneo
-          id: scan-result
-          if: always()
+        id: scan-result
+        if: always()
         run: |
           if [ -f "reports/scan_results.json" ]; then
             PASSED=$(jq -r '.scan_passed' reports/scan_results.json)
