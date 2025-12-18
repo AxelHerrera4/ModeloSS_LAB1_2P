@@ -117,7 +117,7 @@ jobs:
         run: |
           python scripts/report_generator.py \
             reports/scan_results.json \
-            reports/scan_results.html
+            --output reports/scan_results.html
       
       - name: 📤 Subir reportes como artifacts
         if: always()
