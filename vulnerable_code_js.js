@@ -1,23 +1,14 @@
-// vulnerable_code_js.js
-// Ejemplo de código vulnerable para pruebas ML
+function ejecutarOperacion(operacion, a, b) {
+    const operacionesPermitidas = {
+        suma: (x, y) => x + y,
+        resta: (x, y) => x - y,
+        multiplicacion: (x, y) => x * y,
+        division: (x, y) => y !== 0 ? x / y : null
+    };
 
-function ejecutarCodigo(codigo) {
-    // Vulnerabilidad: uso de eval
-    return eval(codigo);
+    if (!operacionesPermitidas[operacion]) {
+        throw new Error("Operación no permitida");
+    }
+
+    return operacionesPermitidas[operacion](a, b);
 }
-
-function consultaSQL(userInput) {
-    // Vulnerabilidad: concatenación directa en consulta SQL
-    let query = "SELECT * FROM users WHERE name = '" + userInput + "'";
-    return query;
-}
-
-function xssVulnerable(userInput) {
-    // Vulnerabilidad: asignación directa a innerHTML
-    document.getElementById('output').innerHTML = userInput;
-}
-
-// Pruebas de ejemplo
-console.log(ejecutarCodigo('2+2'));
-console.log(consultaSQL("admin' OR '1'='1"));
-xssVulnerable('<img src=x onerror=alert(1)>');
