@@ -1,28 +1,31 @@
 # Sistema de Detección de Vulnerabilidades con Machine Learning
 
-**Pipeline CI/CD Seguro con Integración de IA para Detección Automática de Vulnerabilidades**
+Pipeline CI/CD seguro con integración de IA para detección automática de vulnerabilidades en código Python y JavaScript.
 
 [![Security Scan](https://img.shields.io/badge/security-ML%20powered-green)](https://github.com)
 [![Python](https://img.shields.io/badge/python-3.11+-blue)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-Escáner de vulnerabilidades basado en Machine Learning para código Python y JavaScript con integración completa en CI/CD.
-
 ---
 
-## 🚀 Inicio Rápido
+## Inicio Rápido
+
+## Inicio Rápido
 
 ### 1. Entrenar el Modelo
+
 ```bash
-# Abrir y ejecutar el notebook de entrenamiento:
+# Opción A: Ejecutar el notebook
 train_detector.ipynb
 
-# O ejecutar desde línea de comandos:
+# Opción B: Ejecutar desde línea de comandos
 python ml_model/model.py
 ```
-Tiempo de entrenamiento: 30min a 1 hora utilizando 84,588 muestras reales CVE/CWE (Python + JavaScript)
+
+Tiempo estimado: 30 a 60 minutos usando 84,588 muestras reales CVE/CWE (Python + JavaScript)
 
 ### 2. Escanear Código Localmente
+
 ```bash
 # Escanear un archivo individual
 python scripts/vulnerability_scanner.py tests/vulnerable_code_example.py
@@ -30,12 +33,13 @@ python scripts/vulnerability_scanner.py tests/vulnerable_code_example.py
 # Escanear un directorio completo
 python scripts/vulnerability_scanner.py src/
 
-# Escanear solo archivos modificados (simulando CI/CD)
+# Escanear solo archivos modificados
 python scripts/get_changed_files.py --output changed.json
 python scripts/vulnerability_scanner.py --files-list changed.json
 ```
 
-### 3. Ver Reporte
+### 3. Visualizar Reportes
+
 ```bash
 # El reporte HTML se genera automáticamente
 start reports/scan_results.html
@@ -43,51 +47,50 @@ start reports/scan_results.html
 
 ---
 
-## 🔄 Pipeline CI/CD Automático
+## Pipeline CI/CD Automático
 
-### Configuración GitHub Actions
+### Características del Sistema
 
-El sistema incluye un workflow completo que:
+El sistema incluye un workflow automático que:
 
-✅ **Se ejecuta automáticamente** en cada push y pull request  
-✅ **Detecta archivos cambiados** y escanea solo lo modificado  
-✅ **Analiza con IA** usando modelo Random Forest entrenado  
-✅ **Genera reportes** HTML y JSON con explicabilidad  
-✅ **Comenta en PRs** con resultados detallados  
-✅ **Bloquea merge** si detecta vulnerabilidades críticas  
-✅ **Crea issues** automáticos para vulnerabilidades en push  
+- Se ejecuta automáticamente en cada push y pull request
+- Detecta archivos cambiados y escanea solo lo modificado
+- Analiza con IA usando modelo Random Forest entrenado
+- Genera reportes HTML y JSON con explicabilidad
+- Comenta en PRs con resultados detallados
+- Bloquea merge si detecta vulnerabilidades críticas
+- Crea issues automáticos para vulnerabilidades en push
 
 ### Flujo de Trabajo
 
-```mermaid
-graph LR
-    A[Commit/PR] --> B[Detectar Archivos Cambiados]
-    B --> C[Escaneo ML]
-    C --> D{Vulnerabilidades?}
-    D -->|Sí| E[❌ Bloquear PR]
-    D -->|No| F[✅ Aprobar PR]
-    E --> G[Comentar en PR]
-    E --> H[Crear Issue]
-    F --> G
-    G --> I[Subir Reportes]
+```
+Commit/PR
+    ↓
+Detectar Archivos Cambiados
+    ↓
+Escaneo ML
+    ↓
+¿Vulnerabilidades?
+    ├─ Sí → Bloquear PR → Comentar en PR → Crear Issue
+    └─ No → Aprobar PR → Subir Reportes
 ```
 
 ### Activación del Pipeline
 
-1. **Hacer commit de cambios**:
+1. Hacer commit de cambios:
 ```bash
 git add .
 git commit -m "feat: nueva funcionalidad"
 git push origin feature-branch
 ```
 
-2. **El pipeline se ejecuta automáticamente** y:
+2. El pipeline se ejecuta automáticamente y:
    - Detecta archivos `.py` y `.js` modificados
    - Ejecuta análisis ML en cada archivo
    - Genera reporte de vulnerabilidades
    - Comenta resultados en la PR
 
-3. **Revisar resultados**:
+3. Revisar resultados:
    - Ver comentario automático en la PR
    - Descargar reporte HTML desde Artifacts
    - Corregir vulnerabilidades si las hay
@@ -95,9 +98,9 @@ git push origin feature-branch
 
 ---
 
-## 📋 Configuración del Pipeline
+## Configuración del Pipeline
 
-### Archivo: `config.yml`
+### Archivo: config.yml
 
 ```yaml
 model:
@@ -127,24 +130,24 @@ cicd:
 
 ---
 
-## 📊 Capacidades de Detección
+## Capacidades de Detección
 
 El sistema detecta los siguientes patrones de vulnerabilidades:
 
 | Categoría | Descripción |
 |-----------|-------------|
-| 🔴 **Inyección de Código** | `eval()`, `exec()`, `__import__` |
-| 🔴 **SQL Injection** | Concatenación en queries SQL |
-| 🔴 **Command Injection** | `os.system()`, `subprocess` con `shell=True` |
-| 🟡 **Criptografía Débil** | MD5, SHA1, DES, RC4 |
-| 🟡 **Deserialización Insegura** | `pickle.load()`, YAML unsafe |
-| 🟡 **Secretos Hardcodeados** | Passwords, API keys, tokens |
-| 🟢 **Path Traversal** | Validación de rutas de archivos |
-| 🟢 **Manejo de Excepciones** | `except:` sin tipo específico |
+| Inyección de Código | eval(), exec(), __import__ |
+| SQL Injection | Concatenación en queries SQL |
+| Command Injection | os.system(), subprocess con shell=True |
+| Criptografía Débil | MD5, SHA1, DES, RC4 |
+| Deserialización Insegura | pickle.load(), YAML unsafe |
+| Secretos Hardcodeados | Passwords, API keys, tokens |
+| Path Traversal | Validación de rutas de archivos |
+| Manejo de Excepciones | except: sin tipo específico |
 
 ---
 
-## 🏗️ Arquitectura del Modelo
+## Arquitectura del Modelo
 
 **Algoritmo**: Random Forest Classifier
 
@@ -168,7 +171,7 @@ El sistema detecta los siguientes patrones de vulnerabilidades:
 
 ---
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 .
@@ -185,65 +188,24 @@ El sistema detecta los siguientes patrones de vulnerabilidades:
 │   ├── code_analyzer.py             # Extracción de características (27)
 │   ├── vulnerability_scanner.py     # Motor de escaneo principal
 │   ├── report_generator.py          # Generación de reportes HTML
-│   └── get_changed_files.py         # 🆕 Detección de archivos cambiados
+│   └── get_changed_files.py         # Detección de archivos cambiados
 ├── tests/
 │   ├── vulnerable_code_example.py   # Casos de prueba vulnerable
 │   ├── secure_code_example.py       # Casos de prueba seguro
 │   ├── vulnerable_code_js.js
 │   ├── secure_code_js.js
-│   └── test_cicd_integration.py     # 🆕 Tests del pipeline
+│   └── test_cicd_integration.py     # Tests del pipeline
 ├── reports/                          # Reportes generados
-├── config.yml                        # 🆕 Configuración del scanner
-├── Dockerfile                        # 🆕 Contenerización
-├── docker-compose.yml                # 🆕 Orquestación local
+├── config.yml                        # Configuración del scanner
+├── Dockerfile                        # Contenerización
+├── docker-compose.yml                # Orquestación local
 ├── requirements.txt                  # Dependencias Python
 └── train_detector.ipynb              # Notebook de entrenamiento
 ```
 
 ---
-- 200 árboles de decisión
-- Profundidad máxima: 15 niveles
-- Pesos de clase balanceados
-- Procesamiento multi-núcleo habilitado
 
-**Características**: 27 características del código basadas en AST extraídas del código fuente
-
-**Dataset**: 84,588 muestras reales de vulnerabilidades
-- Python: 2,316 muestras de la base de datos CVE/CWE
-- JavaScript: ~42,000 muestras de la base de datos CVE/CWE
-- Dataset balanceado: 50% vulnerable, 50% seguro (utilizando código patch)
-
-**Métricas de Rendimiento**:
-- Precisión de entrenamiento: 100%
-- ROC-AUC: 1.0000
-- Validación cruzada: 94.56% ± 9.81%
-
----
-
-## Estructura del Proyecto
-
-```
-train_detector.ipynb              Notebook de entrenamiento (5 celdas)
-Dataset/
-  ├── data_Python.csv             Vulnerabilidades Python (2,316 muestras)
-  └── data_JavaScript.csv         Vulnerabilidades JavaScript (~42K muestras)
-ml_model/
-  ├── model.py                    Implementación Random Forest
-  └── vulnerability_detector.pkl  Modelo entrenado
-scripts/
-  ├── code_analyzer.py            Extracción de características AST (27 características)
-  ├── vulnerability_scanner.py    Motor principal de escaneo
-  └── report_generator.py         Generación de reportes HTML
-tests/
-  ├── vulnerable_code_example.py  Casos de prueba Python
-  ├── secure_code_example.py
-  ├── vulnerable_code_js.js       Casos de prueba JavaScript
-  └── secure_code_js.js
-```
-
----
-
-## 🐳 Uso con Docker
+## Uso con Docker
 
 ### Construcción de la Imagen
 
@@ -284,7 +246,7 @@ docker-compose run model-trainer
 
 ---
 
-## 🧪 Tests y Validación
+## Tests y Validación
 
 ### Ejecutar Tests Localmente
 
@@ -317,7 +279,7 @@ ls -lh reports/
 
 ---
 
-## 📖 Ejemplos de Uso
+## Ejemplos de Uso
 
 ### Escanear un Archivo Individual
 
@@ -348,7 +310,7 @@ Resumen del escaneo:
    Vulnerabilidades detectadas: 1
    Archivos de alto riesgo (>70%): 1
 
-❌ Escaneo FALLÓ: 1 vulnerabilidades detectadas
+Escaneo FALLÓ: 1 vulnerabilidades detectadas
 ```
 
 ### Escanear Directorio con Umbral Personalizado
@@ -372,11 +334,11 @@ open reports/scan_results.html
 
 ---
 
-## 🔧 Configuración Avanzada
+## Configuración Avanzada
 
 ### Ajustar Umbrales de Riesgo
 
-Editar [`config.yml`](config.yml):
+Editar [config.yml](config.yml):
 
 ```yaml
 risk_levels:
@@ -400,12 +362,12 @@ scanner:
     - "venv"
     - "build"
     - "dist"
-    - "test_data"  # Agregar custom
+    - "test_data"
 ```
 
 ### Personalizar Workflow CI/CD
 
-Editar [`.github/workflows/security-scan.yml`](.github/workflows/security-scan.yml):
+Editar [.github/workflows/security-scan.yml](.github/workflows/security-scan.yml):
 
 ```yaml
 env:
@@ -418,23 +380,23 @@ on:
 
 ---
 
-## 📊 Interpretación de Resultados
+## Interpretación de Resultados
 
 ### Niveles de Riesgo
 
-| Nivel | Probabilidad | Color | Acción Recomendada |
-|-------|-------------|-------|-------------------|
-| 🔴 **CRÍTICO** | ≥ 90% | Rojo | Bloquear deploy, corregir inmediatamente |
-| 🟠 **ALTO** | 70-89% | Naranja | Bloquear merge, revisar antes de aprobar |
-| 🟡 **MEDIO** | 40-69% | Amarillo | Revisar y documentar, no bloquear |
-| 🟢 **BAJO** | < 40% | Verde | Informativo, sin acción requerida |
+| Nivel | Probabilidad | Acción Recomendada |
+|-------|-------------|-------------------|
+| CRÍTICO | >= 90% | Bloquear deploy, corregir inmediatamente |
+| ALTO | 70-89% | Bloquear merge, revisar antes de aprobar |
+| MEDIO | 40-69% | Revisar y documentar, no bloquear |
+| BAJO | < 40% | Informativo, sin acción requerida |
 
 ### Factores de Riesgo Comunes
 
 **Críticos (Corrección Inmediata)**:
-- `eval()` / `exec()` - Inyección de código
+- eval() / exec() - Inyección de código
 - SQL concatenado - SQL Injection
-- `shell=True` - Command Injection
+- shell=True - Command Injection
 - Secretos hardcodeados - Exposición de credenciales
 
 **Importantes (Revisar Pronto)**:
@@ -445,7 +407,7 @@ on:
 
 ---
 
-## 🔄 Proceso de Entrenamiento
+## Proceso de Entrenamiento
 
 El pipeline de entrenamiento consiste en 5 pasos:
 
@@ -453,7 +415,7 @@ El pipeline de entrenamiento consiste en 5 pasos:
 2. **Extraer Características**: Analiza código vulnerable y parches (seguro)
 3. **Entrenar Modelo**: Ajusta Random Forest con 84,588 muestras
 4. **Validar**: Validación cruzada con 5 folds
-5. **Guardar Modelo**: Persiste en `ml_model/vulnerability_detector.pkl`
+5. **Guardar Modelo**: Persiste en ml_model/vulnerability_detector.pkl
 
 **Ejecutar entrenamiento**:
 ```bash
@@ -465,14 +427,14 @@ python ml_model/model.py
 ```
 
 **Re-entrenar con nuevos datos**:
-1. Agregar nuevas muestras a `Dataset/data_Python.csv` o `data_JavaScript.csv`
+1. Agregar nuevas muestras a Dataset/data_Python.csv o data_JavaScript.csv
 2. Ejecutar el notebook o script
-3. El nuevo modelo sobrescribirá `vulnerability_detector.pkl`
+3. El nuevo modelo sobrescribirá vulnerability_detector.pkl
 4. Commit del nuevo modelo al repositorio
 
 ---
 
-## 🚨 Resolución de Problemas
+## Resolución de Problemas
 
 ### El modelo no se encuentra
 
@@ -494,7 +456,7 @@ python ml_model/model.py
 **Problema**: Modelo no incluido en el repositorio
 
 **Soluciones**:
-1. Subir el modelo `.pkl` al repositorio (si es pequeño)
+1. Subir el modelo .pkl al repositorio (si es pequeño)
 2. Usar Git LFS para archivos grandes
 3. Entrenar automáticamente en CI (ver workflow):
 ```yaml
@@ -512,11 +474,11 @@ Si el scanner marca código seguro como vulnerable:
 1. **Revisar el código**: Podría tener patrones sospechosos
 2. **Ajustar umbral**: Aumentar a 0.80 o 0.90
 3. **Re-entrenar modelo**: Con más ejemplos del patrón específico
-4. **Excluir archivo**: Agregar a `.gitignore` o config exclusions
+4. **Excluir archivo**: Agregar a .gitignore o config exclusions
 
 ---
 
-## 📚 Recursos y Referencias
+## Recursos y Referencias
 
 ### Documentación
 
@@ -538,36 +500,36 @@ Si el scanner marca código seguro como vulnerable:
 
 ---
 
-## 🤝 Contribución
+## Contribución
 
 ### Agregar Nuevas Vulnerabilidades al Dataset
 
-1. Editar `Dataset/data_Python.csv` o `data_JavaScript.csv`
-2. Agregar filas con el formato: `codigo_vulnerable,1` o `codigo_seguro,0`
-3. Re-entrenar modelo: `python ml_model/model.py`
-4. Validar con tests: `pytest tests/`
+1. Editar Dataset/data_Python.csv o data_JavaScript.csv
+2. Agregar filas con el formato: codigo_vulnerable,1 o codigo_seguro,0
+3. Re-entrenar modelo: python ml_model/model.py
+4. Validar con tests: pytest tests/
 
 ### Extender Características de Análisis
 
-Editar [`scripts/code_analyzer.py`](scripts/code_analyzer.py) para agregar nuevas características en la clase `CodeFeatures`.
+Editar [scripts/code_analyzer.py](scripts/code_analyzer.py) para agregar nuevas características en la clase CodeFeatures.
 
 ---
 
-## 📝 Licencia y Proyecto Académico
+## Licencia y Proyecto Académico
 
-**Proyecto**: Laboratorio de Seguridad Informática y Modernización de Aplicaciones  
-**Objetivo**: Pipeline CI/CD Seguro con Integración de IA para Detección Automática de Vulnerabilidades  
+**Proyecto**: Laboratorio de Seguridad Informática y Modernización de Aplicaciones
+**Objetivo**: Pipeline CI/CD Seguro con Integración de IA para Detección Automática de Vulnerabilidades
 **Dataset**: Bases de datos reales CVE/CWE
 
 ---
 
-## 📞 Soporte
+## Soporte
 
 Para problemas o preguntas:
-1. Revisar la sección de [Resolución de Problemas](#-resolución-de-problemas)
+1. Revisar la sección de [Resolución de Problemas](#resolución-de-problemas)
 2. Consultar los [tests de ejemplo](tests/)
 3. Crear un issue en el repositorio
 
 ---
 
-**🔒 Mantén tu código seguro con Machine Learning** 🤖
+**Mantén tu código seguro con Machine Learning**
