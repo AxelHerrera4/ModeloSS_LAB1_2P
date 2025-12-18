@@ -1,0 +1,36 @@
+# Docker Compose para desarrollo y testing local
+version: '3.8'
+
+services:
+  # Scanner de vulnerabilidades
+  vulnerability-scanner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vulnerability-scanner:latest
+    container_name: ml-security-scanner
+    volumes:
+      # Montar código fuente para escanear
+      - ./:/code:ro
+      # Montar reportes (lectura/escritura)
+      - ./reports:/app/reports:rw
+      # Montar modelo (solo lectura)
+      - ./ml_model/vulnerability_detector.pkl:/app/ml_model/vulnerability_detector.pkl:ro
+    environment:
+      - RISK_THRESHOLD=0.70
+    # Comando de ejemplo: escanear directorio /code
+    command: ["--target", "/code", "--output", "/app/reports/docker_scan_results.json"]
+    
+  # Entrenamiento del modelo (opcional)
+  model-trainer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vulnerability-scanner:latest
+    container_name: ml-model-trainer
+    volumes:
+      - ./Dataset:/app/Dataset:ro
+      - ./ml_model:/app/ml_model:rw
+      - ./train_detector.ipynb:/app/train_detector.ipynb:ro
+    working_dir: /app
+    command: ["python", "ml_model/model.py"]
