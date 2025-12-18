@@ -91,4 +91,8 @@ Dataset/data_CSharp.csv
 Dataset/data_CPlusPlus.csv
 Dataset/data_C.csv
 
+# Railway deployment
+node_modules
+.env
+
 
