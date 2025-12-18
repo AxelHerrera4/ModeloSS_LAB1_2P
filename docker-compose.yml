@@ -12,19 +12,4 @@ services:
       - "3000:3000"
     command: ["npm", "start"]
 
-  # Scanner de vulnerabilidades
-  vulnerability-scanner:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: vulnerability-scanner:latest
-    container_name: ml-security-scanner
-    volumes:
-      - ./:/code:ro
-      - ./reports:/app/reports:rw
-      - ./ml_model/vulnerability_detector.pkl:/app/ml_model/vulnerability_detector.pkl:ro
-    environment:
-      - RISK_THRESHOLD=0.70
-    command: ["--target", "/code", "--output", "/app/reports/docker_scan_results.json"]
-
 
