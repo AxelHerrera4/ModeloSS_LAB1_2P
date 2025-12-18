@@ -1,3 +1,244 @@
+   Python (.py): 1
+   JavaScript (.js): 0
+
+ALERTA [Python]: tests/vulnerable_code_example.py
+   Probabilidad de vulnerabilidad: 99.50%
+   Nivel de riesgo: CRÍTICO
+   Factores de riesgo detectados:
+      - Uso de eval()
+      - Uso de exec()
+      - Secretos hardcodeados
+      - subprocess con shell=True
+      - SQL injection (concatenación)
+
+Resumen del escaneo:
+   Total de archivos analizados: 1
+   Vulnerabilidades detectadas: 1
+   Archivos de alto riesgo (>70%): 1
+
+Escaneo FALLÓ: 1 vulnerabilidades detectadas
+```
+
+### Escanear Directorio con Umbral Personalizado
+
+```bash
+python scripts/vulnerability_scanner.py src/ --threshold 0.80
+```
+
+### Escanear Solo Archivos Modificados
+
+```bash
+# Comparar con rama main
+python scripts/get_changed_files.py --base origin/main --head HEAD --output changed.json
+
+# Escanear solo los archivos cambiados
+python scripts/vulnerability_scanner.py --files-list changed.json
+
+# Ver reporte
+open reports/scan_results.html
+```
+
+---
+
+## Configuración Avanzada
+
+### Ajustar Umbrales de Riesgo
+
+Editar [config.yml](config.yml):
+
+```yaml
+risk_levels:
+  critical:
+    min_probability: 0.90
+  high:
+    min_probability: 0.70
+  medium:
+    min_probability: 0.40
+  low:
+    min_probability: 0.0
+```
+
+### Excluir Directorios del Escaneo
+
+```yaml
+scanner:
+  excluded_directories:
+    - "__pycache__"
+    - "node_modules"
+    - "venv"
+    - "build"
+    - "dist"
+    - "test_data"
+```
+
+### Personalizar Workflow CI/CD
+
+Editar [.github/workflows/security-scan.yml](.github/workflows/security-scan.yml):
+
+```yaml
+env:
+  RISK_THRESHOLD: '0.80'  # Aumentar umbral a 80%
+  
+on:
+  push:
+    branches: [ main, develop, staging ]  # Agregar más branches
+```
+
+---
+
+## Interpretación de Resultados
+
+### Niveles de Riesgo
+
+| Nivel | Probabilidad | Acción Recomendada |
+|-------|-------------|-------------------|
+| CRÍTICO | >= 90% | Bloquear deploy, corregir inmediatamente |
+| ALTO | 70-89% | Bloquear merge, revisar antes de aprobar |
+| MEDIO | 40-69% | Revisar y documentar, no bloquear |
+| BAJO | < 40% | Informativo, sin acción requerida |
+
+### Factores de Riesgo Comunes
+
+**Críticos (Corrección Inmediata)**:
+- eval() / exec() - Inyección de código
+- SQL concatenado - SQL Injection
+- shell=True - Command Injection
+- Secretos hardcodeados - Exposición de credenciales
+
+**Importantes (Revisar Pronto)**:
+- Criptografía débil (MD5, SHA1)
+- Deserialización insegura (pickle)
+- Path traversal sin validación
+- Manejo genérico de excepciones
+
+---
+
+## Proceso de Entrenamiento
+
+El pipeline de entrenamiento consiste en 5 pasos:
+
+1. **Cargar Datasets**: Combina datos CVE/CWE de Python y JavaScript
+2. **Extraer Características**: Analiza código vulnerable y parches (seguro)
+3. **Entrenar Modelo**: Ajusta Random Forest con 84,588 muestras
+4. **Validar**: Validación cruzada con 5 folds
+5. **Guardar Modelo**: Persiste en ml_model/vulnerability_detector.pkl
+
+**Ejecutar entrenamiento**:
+```bash
+# Opción 1: Notebook (recomendado para exploración)
+jupyter notebook train_detector.ipynb
+
+# Opción 2: Script (para CI/CD)
+python ml_model/model.py
+```
+
+**Re-entrenar con nuevos datos**:
+1. Agregar nuevas muestras a Dataset/data_Python.csv o data_JavaScript.csv
+2. Ejecutar el notebook o script
+3. El nuevo modelo sobrescribirá vulnerability_detector.pkl
+4. Commit del nuevo modelo al repositorio
+
+---
+
+## Resolución de Problemas
+
+### El modelo no se encuentra
+
+```bash
+Error: Modelo no encontrado en ml_model/vulnerability_detector.pkl
+```
+
+**Solución**:
+```bash
+# Entrenar el modeloo
+python ml_model/model.py
+
+# O descargar desde releases si existe
+# git lfs pull  # Si usas Git LFS
+```
+
+### El pipeline falla en GitHub Actions
+
+**Problema**: Modelo no incluido en el repositorio
+
+**Soluciones**:
+1. Subir el modelo .pkl al repositorio (si es pequeño)
+2. Usar Git LFS para archivos grandes
+3. Entrenar automáticamente en CI (ver workflow):
+```yaml
+- name: Train Model if Missing
+  run: |
+    if [ ! -f "ml_model/vulnerability_detector.pkl" ]; then
+      python ml_model/model.py
+    fi
+```
+
+### Falsos positivos
+
+Si el scanner marca código seguro como vulnerable:
+
+1. **Revisar el código**: Podría tener patrones sospechosos
+2. **Ajustar umbral**: Aumentar a 0.80 o 0.90
+3. **Re-entrenar modelo**: Con más ejemplos del patrón específico
+4. **Excluir archivo**: Agregar a .gitignore o config exclusions
+
+---
+
+## Recursos y Referencias
+
+### Documentación
+
+- [Configuración del Pipeline](config.yml)
+- [GitHub Actions Workflow](.github/workflows/security-scan.yml)
+- [Tests de Integración](tests/test_cicd_integration.py)
+
+### Seguridad
+
+- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+- [CWE - Common Weakness Enumeration](https://cwe.mitre.org/)
+- [Python Security](https://python.readthedocs.io/en/stable/library/security_warnings.html)
+- [JavaScript Security](https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html)
+
+### Machine Learning
+
+- [scikit-learn Random Forest](https://scikit-learn.org/stable/modules/ensemble.html#forest)
+- [SHAP para Explicabilidad](https://shap.readthedocs.io/)
+
+---
+
+## 🤝 Contribución
+
+### Agregar Nuevas Vulnerabilidades al Dataset
+
+1. Editar `Dataset/data_Python.csv` o `data_JavaScript.csv`
+2. Agregar filas con el formato: `codigo_vulnerable,1` o `codigo_seguro,0`
+3. Re-entrenar modelo: `python ml_model/model.py`
+4. Validar con tests: `pytest tests/`
+
+### Extender Características de Análisis
+
+Editar [`scripts/code_analyzer.py`](scripts/code_analyzer.py) para agregar nuevas características en la clase `CodeFeatures`.
+
+---
+
+## 📝 Licencia y Proyecto Académico
+
+**Proyecto**: Laboratorio de Seguridad Informática y Modernización de Aplicaciones  
+**Objetivo**: Pipeline CI/CD Seguro con Integración de IA para Detección Automática de Vulnerabilidades  
+**Dataset**: Bases de datos reales CVE/CWE
+
+---
+
+## 📞 Soporte
+
+Para problemas o preguntas:
+1. Revisar la sección de [Resolución de Problemas](#-resolución-de-problemas)
+2. Consultar los [tests de ejemplo](tests/)
+3. Crear un issue en el repositorio
+
+---
+
+**🔒 Mantén tu código seguro con Machine Learning** 🤖
 # CI/CD Pipeline Completo con ML Security Scanner
 
 ## Tabla de Contenidos
@@ -393,7 +634,6 @@ python scripts/vulnerability_scanner.py tests/vulnerable_code_example.py
 **Salida**:
 ```
 Escaneando 1 archivo(s) específico(s)
-============================================================
    Python (.py): 1
    JavaScript (.js): 0
 
@@ -407,7 +647,6 @@ ALERTA [Python]: tests/vulnerable_code_example.py
       - subprocess con shell=True
       - SQL injection (concatenación)
 
-============================================================
 Resumen del escaneo:
    Total de archivos analizados: 1
    Vulnerabilidades detectadas: 1
