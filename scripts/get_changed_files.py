@@ -82,30 +82,41 @@ def get_changed_files_github_env() -> List[str]:
 def filter_scannable_files(files: List[str], extensions: Set[str] = None) -> List[str]:
     """
     Filtra archivos para quedarse solo con los que se pueden escanear
-    
-    Args:
-        files: Lista de archivos
-        extensions: Set de extensiones permitidas (ej: {'.py', '.js'})
-        
-    Returns:
-        Lista filtrada de archivos
+    Permite excluir archivos específicos (por ejemplo, app.js, vulnerability_scanner.py)
     """
     if extensions is None:
         extensions = {'.py', '.js'}  # Por defecto Python y JavaScript
-    
+
+    # Lista de archivos a excluir explícitamente
+    excluded_files = {
+        'app.js',
+        'vulnerability_scanner.py',
+        'get_changed_files.py',
+        'code_analyzer.py',
+        'report_generator.py',
+    }
+
     scannable = []
-    
+
     for file in files:
         path = Path(file)
-        
+
         # Verificar extensión
         if path.suffix not in extensions:
             continue
-        
+
+        # Excluir archivos específicos
+        if path.name in excluded_files:
+            continue
+
+        # Excluir carpeta scripts
+        if 'scripts' in path.parts:
+            continue
+
         # Verificar que el archivo existe
         if not path.exists():
             continue
-        
+
         # Excluir ciertos directorios
         excluded_dirs = {
             '__pycache__',
@@ -118,12 +129,11 @@ def filter_scannable_files(files: List[str], extensions: Set[str] = None) -> Lis
             'dist',
             '.pytest_cache'
         }
-        
         if any(excluded in path.parts for excluded in excluded_dirs):
             continue
-        
+
         scannable.append(str(path))
-    
+
     return scannable
 
 
