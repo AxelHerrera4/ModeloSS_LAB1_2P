@@ -398,6 +398,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [security-scan, merge-to-test]
     if: needs.security-scan.outputs.scan_passed == 'true'
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+      DEPLOYMENT_URL: ${{ secrets.DEPLOYMENT_URL }}
     
     steps:
       - name: 📥 Checkout code
@@ -458,20 +463,20 @@ jobs:
       
       - name: 🚀 Deploy to Railway
         id: deploy-railway
-        if: secrets.RAILWAY_TOKEN != ''
+        if: ${{ env.RAILWAY_TOKEN != '' }}
         run: |
           npm install -g @railway/cli
           railway deploy --service vulnerability-scanner
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_TOKEN: ${{ env.RAILWAY_TOKEN }}
         continue-on-error: true
       
       - name: 🚀 Deploy to Render (alternativo)
         id: deploy-render
-        if: secrets.RENDER_API_KEY != '' && steps.deploy-railway.outcome == 'skipped'
+        if: ${{ env.RENDER_API_KEY != '' && steps.deploy-railway.outcome == 'skipped' }}
         run: |
-          curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+          curl -X POST "https://api.render.com/v1/services/${{ env.RENDER_SERVICE_ID }}/deploys" \
+            -H "Authorization: Bearer ${{ env.RENDER_API_KEY }}" \
             -H "Content-Type: application/json"
         continue-on-error: true
       
@@ -509,7 +514,7 @@ jobs:
               `4. ✅ Merge a main - COMPLETADO\n` +
               `5. ✅ Despliegue a producción - EXITOSO\n\n` +
               `🚀 **La aplicación está ahora en producción.**\n` +
-              `🌐 URL: ${{ secrets.DEPLOYMENT_URL || 'Configurar DEPLOYMENT_URL en secrets' }}\n\n` +
+              `🌐 URL: ${{ env.DEPLOYMENT_URL || 'Configurar DEPLOYMENT_URL en secrets' }}\n\n` +
               `🎊 ¡Felicidades por el despliegue exitoso!`;
             
             await github.rest.issues.createComment({
